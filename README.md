@@ -6,8 +6,10 @@
 ![A screenshot of the emulator](./assets/example.png)
 
 <div align="center">
-    <p><i>A preview of my final project running in the emulator</i></p>
+    <p><i>A preview of my project running in the emulator</i></p>
 </div>
+<br />
+<br />
 
 ## How to use:
 
