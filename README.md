@@ -1,6 +1,6 @@
 <div align="center">
     <h1>DTEK-V emulator</h1>
-    <p>An emulator for the chip that the KTH students have to use in IS1500</p>
+    <p>An emulator for the chip that the KTH students taking the IS1500 course have to use</p>
 </div>
 
 ![A screenshot of the emulator](./assets/example.png)
@@ -29,55 +29,55 @@ In the future i want to take an argument in instead of compiling the binary.
 
 ## Supported Risc-V instructions:
 
-- [X] LUI
-- [X] AUIPC
-- [X] JAL
-- [X] JALR
-- [X] BEQ
-- [X] BNE
-- [X] BLT
-- [X] BGE
-- [X] BLTU
-- [X] BGEU
-- [X] LB
-- [X] LH
-- [X] LW
-- [X] LBU
-- [X] LHU
-- [X] SB
-- [X] SH
-- [X] SW
-- [X] ADDI
-- [X] SLTI
-- [X] SLTIU
-- [X] XORI
-- [X] ORI
-- [X] ANDI
-- [X] SLLI
-- [X] SRLI
-- [X] SRAI
-- [X] ADD
-- [X] SUB
-- [X] SLL
-- [X] SLT
-- [X] SLTU
-- [X] XOR
-- [X] SRL
-- [X] SRA
-- [X] OR
-- [X] AND
-- [X] CSRRW
-- [X] CSRRS
-- [X] CSRRC
+- [x] LUI
+- [x] AUIPC
+- [x] JAL
+- [x] JALR
+- [x] BEQ
+- [x] BNE
+- [x] BLT
+- [x] BGE
+- [x] BLTU
+- [x] BGEU
+- [x] LB
+- [x] LH
+- [x] LW
+- [x] LBU
+- [x] LHU
+- [x] SB
+- [x] SH
+- [x] SW
+- [x] ADDI
+- [x] SLTI
+- [x] SLTIU
+- [x] XORI
+- [x] ORI
+- [x] ANDI
+- [x] SLLI
+- [x] SRLI
+- [x] SRAI
+- [x] ADD
+- [x] SUB
+- [x] SLL
+- [x] SLT
+- [x] SLTU
+- [x] XOR
+- [x] SRL
+- [x] SRA
+- [x] OR
+- [x] AND
+- [x] CSRRW
+- [x] CSRRS
+- [x] CSRRC
 - [ ] CSRRWI
-- [X] CSRRSI
+- [x] CSRRSI
 - [ ] CSRRCI
-- [X] MRET
-- [X] ECALL
-- [X] MUL
-- [X] MULH
-- [X] MULHU
-- [X] MULHSU
+- [x] MRET
+- [x] ECALL
+- [x] MUL
+- [x] MULH
+- [x] MULHU
+- [x] MULHSU
 - [-] DIV
 - [-] DIVU
 - [-] REM
@@ -94,4 +94,3 @@ In the future i want to take an argument in instead of compiling the binary.
 ## Supported Modes
 
 Only machine mode is supported
-
