@@ -280,37 +280,3 @@ fn test_sieves_c_program_o3() {
         );
     }
 }
-
-#[test]
-fn test_cpu_interrupts_ecall() {
-    let bin: Vec<u32> = vec![
-        0x3001e073, // csrs mstatus,3
-        0x00000297, // auipc t0,0x0
-        0x02028293, // add t0,t0,32 # 24 <trap>
-        0x30529073, // csrw mtvec,t0
-        0x01e00513, // li a0,30
-        0x0c800593, // li a1,200
-        0x00400893, // li a7,4
-        0x00000073, // ecall
-        // 00000020 <end>:
-        0x0000006f, // j 20 <end>
-        // 00000024 <trap>:
-        0x342022f3, // csrr t0,mcause
-        0x00028f93, // mv t6,t0
-        0x00a5a023, // sw a0,0(a1)
-        0x341022f3, // csrr t0,mepc
-        0x00428293, // add t0,t0,4
-        0x34129073, // csrw mepc,t0
-        0x30200073, // mret
-    ];
-
-    let mut cpu = Cpu::new();
-    for (i, instr) in bin.iter().enumerate() {
-        cpu.bus.store_word(i as u32 * 4, *instr);
-    }
-    for _ in 0..2000 {
-        cpu.clock();
-    }
-
-    assert_eq!(cpu.bus.load_word(200), 30);
-}

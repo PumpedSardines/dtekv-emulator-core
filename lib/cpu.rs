@@ -4,7 +4,7 @@ use crate::{
     Vga,
 };
 
-const RAM_SIZE: usize = 2_000_000;
+const RAM_SIZE: usize = 0x3ffffff;
 
 #[derive(Debug, Clone)]
 pub struct Cpu {
@@ -455,10 +455,13 @@ impl Cpu {
     }
 
     fn fetch_instruction(&self) -> Result<Instruction, u32> {
+        if (self.pc & 3) != 0 {
+            return Err(exception::INSTRUCTION_ADDRESS_MISALIGN);
+        }
         self.bus
             .load_word(self.pc)
             .try_into()
-            .map_err(|_| exception::INSTRUCTION_ACCESS_FAULT)
+            .map_err(|_| exception::ILLEGAL_INSTRUCTION)
     }
 
     fn exec_instruction(&mut self, instruction: Instruction) {
@@ -530,7 +533,6 @@ impl Cpu {
 
         let exception_pc = self.pc.wrapping_sub(4);
         self.pc = 0;
-
         self.csr.write(csr::MEPC, exception_pc);
         self.csr.write(csr::MCAUSE, cause);
         self.csr.set_mstatus_mpie(self.csr.get_mstatus_mie());
