@@ -4,8 +4,6 @@ use crate::{
     Vga,
 };
 
-const RAM_SIZE: usize = 0x3ffffff;
-
 #[derive(Debug, Clone)]
 pub struct Cpu {
     pub bus: Bus,
@@ -18,7 +16,7 @@ impl Cpu {
     pub fn new() -> Cpu {
         Cpu {
             bus: Bus {
-                mem: Memory::empty(2_000_000),
+                mem: Memory::empty(0x3ffffff),
                 hex_display: HexDisplay::new(),
                 switch: Switch::new(),
                 uart: Uart::new(),
@@ -33,9 +31,7 @@ impl Cpu {
 
     pub fn from_bin(bin: Vec<u8>) -> Cpu {
         let mut cpu = Cpu::new();
-        let mut mem = Memory::empty(RAM_SIZE);
-        mem.load_data_at(0, bin);
-        cpu.bus.mem = mem;
+        cpu.bus.mem.load_data_at(0, bin);
         cpu
     }
 

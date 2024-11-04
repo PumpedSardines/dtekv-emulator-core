@@ -43,7 +43,6 @@ impl MainState {
         button.y = 1600.0 - 100.0 - 70.0;
 
         let vga_display = VgaDisplay {
-            counter: 0,
             x: (1800.0 - 320.0 * 5.0) / 2.0,
             y: 50.0,
             image: None,
@@ -193,15 +192,10 @@ struct VgaDisplay {
     x: f32,
     y: f32,
     image: Option<graphics::Image>,
-    counter: u32,
 }
 
 impl VgaDisplay {
     fn update(&mut self, ctx: &mut Context, cpu: &dtekv_emulator::Cpu) {
-        if self.counter % 60 != 0 {
-            self.counter += 1;
-            return;
-        }
         let mut pixel_data = [0u8; 320 * 240 * 4];
         for x in 0..320 {
             for y in 0..240 {
