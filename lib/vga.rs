@@ -24,7 +24,7 @@ impl Vga {
 }
 
 impl LoadStore for Vga {
-    fn load_byte(&self, addr: u32) -> u8 {
+    fn load_byte(&self, _addr: u32) -> u8 {
         // Hard wired to 0
         0
     }

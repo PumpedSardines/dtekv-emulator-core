@@ -21,10 +21,9 @@ mod regs;
 pub use regs::Regs;
 
 mod instruction;
-pub(crate) use instruction::{Format as InstructionFormat, Instruction};
+pub(crate) use instruction::Instruction;
 
 pub(crate) mod csr;
-pub(crate) use csr::Csr;
 
 mod data;
 pub use data::{Data, LoadStore};

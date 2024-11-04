@@ -3,11 +3,8 @@ use ggez::{
     event,
     glam::{self, *},
     graphics::{self, ImageFormat, Rect},
-    mint::Point2,
-    timer, Context, GameResult,
+    Context, GameResult,
 };
-
-use dtekv_emulator::{Data, LoadStore};
 
 struct MainState {
     cpu: dtekv_emulator::Cpu,
