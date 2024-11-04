@@ -1,0 +1,13 @@
+[package]
+name = "dtekv_emulator"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "dtekv_emulator"
+path = "lib/lib.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ggez = "0.9.3"

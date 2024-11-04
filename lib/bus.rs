@@ -1,0 +1,87 @@
+use crate::{Button, Data, HexDisplay, LoadStore, Memory, Switch, Uart, Vga};
+
+const HEX_DISPLAY_LOWER_ADDR: u32 = 0x04000050;
+const HEX_DISPLAY_HIGHER_ADDR: u32 = 0x04000050 + 0x10 * 5 + 4;
+const SWITCH_LOWER_ADDR: u32 = 0x04000010;
+const SWITCH_HIGHER_ADDR: u32 = 0x0400001C + 4;
+const UART_LOWER_ADDR: u32 = 0x04000040;
+const UART_HIGHER_ADDR: u32 = 0x04000044 + 4;
+const BUTTON_LOWER_ADDR: u32 = 0x040000d0;
+const BUTTON_HIGHER_ADDR: u32 = 0x040000dc + 4;
+const VGA_LOWER_ADDR: u32 = 0x08000000;
+const VGA_HIGHER_ADDR: u32 = 0x08000000 + 320 * 240;
+
+#[derive(Debug, Clone)]
+pub struct Bus {
+    pub mem: Memory,
+    pub hex_display: HexDisplay,
+    pub switch: Switch,
+    pub uart: Uart,
+    pub button: Button,
+    pub vga: Vga,
+}
+
+impl Data for Bus {
+    fn load_halfword(&self, addr: u32) -> u16 {
+        u16::from_be_bytes([self.load_byte(addr + 1), self.load_byte(addr + 0)])
+    }
+
+    fn load_word(&self, addr: u32) -> u32 {
+        u32::from_be_bytes([
+            self.load_byte(addr + 3),
+            self.load_byte(addr + 2),
+            self.load_byte(addr + 1),
+            self.load_byte(addr + 0),
+        ])
+    }
+
+    fn store_halfword(&mut self, addr: u32, halfword: u16) {
+        let bytes = halfword.to_be_bytes();
+        self.store_byte(addr + 0, bytes[1]);
+        self.store_byte(addr + 1, bytes[0]);
+    }
+
+    fn store_word(&mut self, addr: u32, word: u32) {
+        let bytes = word.to_be_bytes();
+        self.store_byte(addr + 0, bytes[3]);
+        self.store_byte(addr + 1, bytes[2]);
+        self.store_byte(addr + 2, bytes[1]);
+        self.store_byte(addr + 3, bytes[0]);
+    }
+}
+
+impl LoadStore for Bus {
+    fn load_byte(&self, addr: u32) -> u8 {
+        match addr {
+            HEX_DISPLAY_LOWER_ADDR..HEX_DISPLAY_HIGHER_ADDR => {
+                self.hex_display.load_byte(addr - HEX_DISPLAY_LOWER_ADDR)
+            }
+            SWITCH_LOWER_ADDR..SWITCH_HIGHER_ADDR => {
+                self.switch.load_byte(addr - SWITCH_LOWER_ADDR)
+            }
+            UART_LOWER_ADDR..UART_HIGHER_ADDR => self.uart.load_byte(addr - UART_LOWER_ADDR),
+            BUTTON_LOWER_ADDR..BUTTON_HIGHER_ADDR => {
+                self.button.load_byte(addr - BUTTON_LOWER_ADDR)
+            }
+            VGA_LOWER_ADDR..VGA_HIGHER_ADDR => self.vga.load_byte(addr - VGA_LOWER_ADDR),
+            _ => self.mem.load_byte(addr),
+        }
+    }
+
+    fn store_byte(&mut self, addr: u32, byte: u8) {
+        match addr {
+            HEX_DISPLAY_LOWER_ADDR..HEX_DISPLAY_HIGHER_ADDR => self
+                .hex_display
+                .store_byte(addr - HEX_DISPLAY_LOWER_ADDR, byte),
+            SWITCH_LOWER_ADDR..SWITCH_HIGHER_ADDR => {
+                self.switch.store_byte(addr - SWITCH_LOWER_ADDR, byte)
+            }
+            UART_LOWER_ADDR..UART_HIGHER_ADDR => self.uart.store_byte(addr - UART_LOWER_ADDR, byte),
+            BUTTON_LOWER_ADDR..BUTTON_HIGHER_ADDR => {
+                self.button.store_byte(addr - BUTTON_LOWER_ADDR, byte)
+            }
+            VGA_LOWER_ADDR..VGA_HIGHER_ADDR => self.vga.store_byte(addr - VGA_LOWER_ADDR, byte),
+            _ => self.mem.store_byte(addr, byte),
+        }
+    }
+}
