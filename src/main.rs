@@ -44,8 +44,8 @@ impl MainState {
 
         let vga_display = VgaDisplay {
             counter: 0,
-            x: 0.0,
-            y: 0.0,
+            x: (1800.0 - 320.0 * 5.0) / 2.0,
+            y: 50.0,
             image: None,
         };
 
