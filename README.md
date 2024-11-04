@@ -15,7 +15,8 @@
 
 This project can take the binary you upload to the dtek-v board and run it in an emulated environment, making it easier to develop your programs without having to upload to the chip every time you want to debug.
 
-Currently you have to change the code to run your binary. Im working on a way to run any code, if you want to add this submit a PR :) 
+Currently the code compile the file "dtekv-riscv.bin" into the binary when compiling. Replace your binary with that file and run `cargo run` in the terminal.
+In the future i want to take an argument in instead of compiling the binary.
 
 ## Supported IO devices:
 
