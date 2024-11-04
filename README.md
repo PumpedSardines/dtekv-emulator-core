@@ -3,7 +3,7 @@
     <p>An emulator for the chip that the KTH students have to use in IS1500</p>
 </div>
 
-![A screenshot of the game](./assets/screenshot.png)
+![A screenshot of the emulator](./assets/example.png)
 
 <div align="center">
     <p><i>A preview of my final project running in the emulator</i></p>
