@@ -8,14 +8,12 @@ use ggez::{
     event,
     glam::{self, *},
     graphics::{self, ImageFormat, Rect},
-    winit::dpi::{LogicalPosition, LogicalSize, PhysicalSize, Pixel},
+    winit::dpi::{PhysicalSize},
     Context, GameResult,
 };
 
 struct MainState {
     cpu: Cpu,
-    width: f32,
-    height: f32,
     scale_factor: f64,
     switches: Vec<Switch>,
     hex_displays: Vec<HexDisplay>,
@@ -56,8 +54,6 @@ impl MainState {
 
         Ok(MainState {
             cpu,
-            width: 900.0,
-            height: 800.0,
             scale_factor: ctx.gfx.window().scale_factor(),
             switches,
             vga_display,
