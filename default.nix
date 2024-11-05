@@ -4,8 +4,7 @@ in
   pkgs.rustPlatform.buildRustPackage rec {
     pname = manifest.name;
     version = manifest.version;
-    buildInputs = [
-    ];
+    buildInputs = [];
     cargoLock.lockFile = ./Cargo.lock;
     src = pkgs.lib.cleanSource ./.;
   }
