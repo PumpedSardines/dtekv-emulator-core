@@ -10,6 +10,8 @@ mod uart;
 pub use uart::Uart;
 mod vga;
 pub use vga::Vga;
+mod timer;
+pub use timer::Timer;
 
 mod bus;
 pub use bus::Bus;

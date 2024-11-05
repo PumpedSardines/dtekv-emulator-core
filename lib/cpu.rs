@@ -1,7 +1,5 @@
 use crate::{
-    csr::{self, Csr},
-    exception, Bus, Button, Data, HexDisplay, Instruction, LoadStore, Memory, Regs, Switch, Uart,
-    Vga,
+    csr::{self, Csr}, exception, Bus, Button, Data, HexDisplay, Instruction, LoadStore, Memory, Regs, Switch, Timer, Uart, Vga
 };
 
 #[derive(Debug, Clone)]
@@ -22,6 +20,7 @@ impl Cpu {
                 uart: Uart::new(),
                 button: Button::new(),
                 vga: Vga::new(),
+                timer: Timer::new(),
             },
             regs: Regs::new(),
             csr: Csr::new(),
@@ -558,6 +557,10 @@ impl Cpu {
 
     pub fn external_interrupt_button(&mut self) {
         self.external_interrupt(exception::BUTTON);
+    }
+
+    pub fn external_interrupt_timer(&mut self) {
+        self.external_interrupt(exception::TIMER);
     }
 
     pub fn clock(&mut self) {

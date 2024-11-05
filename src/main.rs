@@ -301,14 +301,17 @@ impl event::EventHandler<ggez::GameError> for MainState {
         // is slower than the actual chip
         for _ in 0..200_000 {
             self.cpu.clock();
+
             if self.cpu.bus.switch.should_interrupt() {
                 self.cpu.external_interrupt_switch();
             } else if self.cpu.bus.button.should_interrupt() {
                 self.cpu.external_interrupt_button();
-            } else {
+            } else if self.cpu.bus.timer.should_interrupt() {
+                self.cpu.external_interrupt_timer();
             }
         }
 
+        self.cpu.bus.timer.update();
         self.vga_display.update(ctx, &self.cpu);
 
         Ok(())

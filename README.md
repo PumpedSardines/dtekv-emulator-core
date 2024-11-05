@@ -22,10 +22,12 @@ In the future i want to take an argument in instead of compiling the binary.
 
 - Button
 - Switch
+- Timer
 - VGA output
 - Hex displays
 - Button interrupts
 - Switch interrupts
+- Timer interrupts
 
 ## Supported Risc-V instructions:
 
@@ -78,10 +80,14 @@ In the future i want to take an argument in instead of compiling the binary.
 - [x] MULH
 - [x] MULHU
 - [x] MULHSU
-- [-] DIV
-- [-] DIVU
-- [-] REM
-- [-] REMU
+
+## Supported Risc-V instructions with flaws:
+
+Division by zero crashes the program:
+- [X] DIV
+- [X] DIVU
+- [X] REM
+- [X] REMU
 
 ## Supported CSR
 

@@ -1,4 +1,4 @@
-use crate::{Button, Data, HexDisplay, LoadStore, Memory, Switch, Uart, Vga};
+use crate::{Button, Data, HexDisplay, LoadStore, Memory, Switch, Timer, Uart, Vga};
 
 const SDRAM_LOWER_ADDR: u32 = 0x00000000;
 const SDRAM_HIGHER_ADDR: u32 = 0x3ffffff + 1;
@@ -10,6 +10,8 @@ const UART_LOWER_ADDR: u32 = 0x04000040;
 const UART_HIGHER_ADDR: u32 = 0x04000044 + 4;
 const BUTTON_LOWER_ADDR: u32 = 0x040000d0;
 const BUTTON_HIGHER_ADDR: u32 = 0x040000dc + 4;
+const TIMER_LOWER_ADDR: u32 = 0x4000020;
+const TIMER_HIGHER_ADDR: u32 = 0x400003c + 4;
 const VGA_DMA_LOWER_ADDR: u32 = 0x4000100;
 const VGA_DMA_HIGHER_ADDR: u32 = 0x400010c + 4;
 const VGA_LOWER_ADDR: u32 = 0x08000000;
@@ -23,6 +25,7 @@ pub struct Bus {
     pub uart: Uart,
     pub button: Button,
     pub vga: Vga,
+    pub timer: Timer,
 }
 
 impl Data for Bus {
@@ -70,6 +73,9 @@ impl LoadStore for Bus {
             }
             VGA_LOWER_ADDR..VGA_HIGHER_ADDR => self.vga.load_byte(addr - VGA_LOWER_ADDR),
             VGA_DMA_LOWER_ADDR..VGA_DMA_HIGHER_ADDR => unimplemented!("Fetching VGA DMA not implemented"),
+            TIMER_LOWER_ADDR..TIMER_HIGHER_ADDR => {
+                self.timer.load_byte(addr - TIMER_LOWER_ADDR)
+            },
             // TODO: Implement this
             _ => panic!("Invalid address: {:#010x}", addr),
         }
@@ -90,6 +96,9 @@ impl LoadStore for Bus {
             }
             VGA_LOWER_ADDR..VGA_HIGHER_ADDR => self.vga.store_byte(addr - VGA_LOWER_ADDR, byte),
             VGA_DMA_LOWER_ADDR..VGA_DMA_HIGHER_ADDR => {},
+            TIMER_LOWER_ADDR..TIMER_HIGHER_ADDR => {
+                self.timer.store_byte(addr - TIMER_LOWER_ADDR, byte)
+            },
             // TODO: Implement this
             _ => panic!("Invalid address: {:#010x}", addr),
         }
