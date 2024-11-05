@@ -11,12 +11,15 @@
 <br />
 <br />
 
+## Example:
+
+Run `cargo run --examples board_games` to see the emulator in action
+
 ## How to use:
 
-This project can take the binary you upload to the dtek-v board and run it in an emulated environment, making it easier to develop your programs without having to upload to the chip every time you want to debug.
+Run `dtekv_emulator path/to/bin.bin`, or if you're running directly from this folder: `cargo run --release "path/to/bin.bin"`
 
-Currently the code compile the file "dtekv-riscv.bin" into the binary when compiling. Replace your binary with that file and run `cargo run` in the terminal.
-In the future i want to take an argument in instead of compiling the binary.
+This project can take the binary you upload to the dtek-v board and run it in an emulated environment, making it easier to develop your programs without having to upload to the chip every time you want to debug.
 
 ## Supported IO devices:
 
