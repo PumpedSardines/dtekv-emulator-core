@@ -1,6 +1,6 @@
-/// This file i extremly cursed, i stressed to make a MVP!
-/// Every coordinate is in 1800 x 1600, but i realized the screen i was working on was scaled up by 2
-/// So i do like 4 times conversions between the different modes... Not pretty
+// This file i extremly cursed, i stressed to make a MVP!
+// Every coordinate is in 1800 x 1600, but i realized the screen i was working on was scaled up by 2
+// So i do like 4 times conversions between the different modes... Not pretty
 
 #![allow(clippy::unnecessary_wraps)]
 use crate::Cpu;
