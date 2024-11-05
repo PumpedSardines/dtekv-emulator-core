@@ -1,14 +1,18 @@
 #![allow(clippy::unnecessary_wraps)]
+use crate::Cpu;
 use ggez::{
     event,
     glam::{self, *},
     graphics::{self, ImageFormat, Rect},
+    winit::dpi::{LogicalPosition, LogicalSize, PhysicalSize, Pixel},
     Context, GameResult,
 };
-use crate::Cpu;
 
 struct MainState {
     cpu: Cpu,
+    width: f32,
+    height: f32,
+    scale_factor: f64,
     switches: Vec<Switch>,
     hex_displays: Vec<HexDisplay>,
     button: Button,
@@ -48,6 +52,9 @@ impl MainState {
 
         Ok(MainState {
             cpu,
+            width: 900.0,
+            height: 800.0,
+            scale_factor: ctx.gfx.window().scale_factor(),
             switches,
             vga_display,
             hex_displays,
@@ -295,6 +302,14 @@ impl Button {
 
 impl event::EventHandler<ggez::GameError> for MainState {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
+        let scale_factor = ctx.gfx.window().scale_factor();
+
+        if self.scale_factor != scale_factor {
+            // self.scale_factor = scale_factor;
+            // let size = LogicalSize::new(self.width as f64, self.height as f64);
+            // ctx.gfx.window().set_inner_size(size);
+        }
+
         // 60hz * 500 000 = 30 000 000 hz
         // The update runs 60 times a second and the clock cycle on the dtekv chip is 30 000 000 hz
         //
@@ -320,11 +335,18 @@ impl event::EventHandler<ggez::GameError> for MainState {
 
     fn mouse_button_down_event(
         &mut self,
-        _ctx: &mut Context,
+        ctx: &mut Context,
         _button: event::MouseButton,
         x: f32,
         y: f32,
     ) -> Result<(), ggez::GameError> {
+        let scaling_factor = ctx.gfx.window().scale_factor() as f32;
+
+        let x = x / scaling_factor;
+        let y = y / scaling_factor;
+        let x = x * 2.0;
+        let y = y * 2.0;
+
         for switch in self.switches.iter_mut() {
             switch.handle_mouse_down(x, y, &mut self.cpu);
         }
@@ -349,6 +371,10 @@ impl event::EventHandler<ggez::GameError> for MainState {
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         let mut canvas =
             graphics::Canvas::from_frame(ctx, graphics::Color::from([0.2, 0.2, 0.2, 1.0]));
+        let scaling_factor = ctx.gfx.window().scale_factor() as f32;
+        canvas.set_screen_coordinates(
+            [0.0, 0.0, 3600.0 / scaling_factor, 3200.0 / scaling_factor].into(),
+        );
 
         self.vga_display.draw(&mut canvas, &self.cpu);
 
@@ -371,9 +397,25 @@ impl event::EventHandler<ggez::GameError> for MainState {
 pub fn gui(bin: Vec<u8>) -> GameResult {
     let cb = ggez::ContextBuilder::new("super_simple", "ggez")
         .window_setup(ggez::conf::WindowSetup::default().title("DTEKV"))
-        .window_mode(ggez::conf::WindowMode::default().dimensions(1800.0, 1600.0));
+        .window_mode(
+            ggez::conf::WindowMode::default()
+                .dimensions(900.0, 800.0)
+                .resize_on_scale_factor_change(true),
+        );
     let (mut ctx, event_loop) = cb.build()?;
+    let size = ctx.gfx.window().inner_size();
+    let dpi = ctx.gfx.window().scale_factor() as f32;
+
+    let sw = size.width as f32 * dpi;
+    let sh = size.height as f32 * dpi;
+
+    let size = PhysicalSize::new(sw as f64, sh as f64);
+    ctx.gfx.window().set_inner_size(size);
+
     let mut cpu = Cpu::new();
+
+    // let size = LogicalSize::new(900.0, 800.0);
+    // ctx.gfx.window().set_inner_size(size);
 
     cpu.bus.mem.load_data_at(0, bin);
     // Mie is set to 1 always
