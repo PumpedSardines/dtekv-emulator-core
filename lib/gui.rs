@@ -47,7 +47,7 @@ impl MainState {
         button.y = 1600.0 - 100.0 - 70.0;
 
         let vga_display = VgaDisplay {
-            x: (1800.0 - 320.0 * 5.0) / 2.0,
+            x: (1800.0 - 320.0 * 4.0) / 2.0,
             y: 50.0,
             image: None,
         };
@@ -227,7 +227,7 @@ impl VgaDisplay {
             image,
             graphics::DrawParam::new()
                 .dest(glam::Vec2::new(self.x, self.y))
-                .scale([5.0, 5.0]),
+                .scale([4.0, 4.0]),
         );
         canvas.set_default_sampler();
     }
