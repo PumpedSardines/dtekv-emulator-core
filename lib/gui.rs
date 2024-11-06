@@ -373,7 +373,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
             graphics::Canvas::from_frame(ctx, graphics::Color::from([0.2, 0.2, 0.2, 1.0]));
         let scaling_factor = ctx.gfx.window().scale_factor() as f32;
         canvas.set_screen_coordinates(
-            [0.0, 0.0, 3600.0 / scaling_factor, 3200.0 / scaling_factor].into(),
+            [0.0, 0.0, 1800.0 / scaling_factor, 1600.0 / scaling_factor].into(),
         );
 
         self.vga_display.draw(&mut canvas, &self.cpu);
