@@ -1,5 +1,7 @@
 use crate::{
-    csr::{self, Csr}, exception, Bus, Button, Data, HexDisplay, Instruction, LoadStore, Memory, Regs, Switch, Timer, Uart, Vga
+    csr::{self, Csr},
+    exception, Bus, Button, Data, HexDisplay, Instruction, LoadStore, Memory, Regs, Switch, Timer,
+    Uart, Vga,
 };
 
 #[derive(Debug, Clone)]
@@ -402,13 +404,16 @@ impl Cpu {
     }
 
     fn div(&mut self, rs1: u8, rs2: u8, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2);
+        let rs1 = self.regs.get(rs1) as i32;
+        let rs2 = self.regs.get(rs2) as i32;
         if rs2 == 0 {
-            // TODO: Research what the dtekv chip does when dividing by zero
-            panic!("Division by zero");
+            self.regs.set(rd, 0xFFFFFFFF);
         } else {
-            self.regs.set(rd, (rs1 as i32 / rs2 as i32) as u32);
+            if rs1 == i32::MIN && rs2 == -1 {
+                self.regs.set(rd, rs1 as u32);
+            } else {
+                self.regs.set(rd, (rs1 / rs2) as u32);
+            }
         }
         self.pc += 4;
     }
@@ -417,8 +422,7 @@ impl Cpu {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         if rs2 == 0 {
-            // TODO: Research what the dtekv chip does when dividing by zero
-            panic!("Division by zero");
+            self.regs.set(rd, 0xFFFFFFFF);
         } else {
             self.regs.set(rd, rs1 / rs2);
         }
@@ -429,10 +433,13 @@ impl Cpu {
         let rs1 = self.regs.get(rs1) as i32;
         let rs2 = self.regs.get(rs2) as i32;
         if rs2 == 0 {
-            // TODO: Research what the dtekv chip does when dividing by zero
-            panic!("Remainder by zero");
+            self.regs.set(rd, rs1 as u32);
         } else {
-            self.regs.set(rd, (rs1 % rs2) as u32);
+            if rs1 == i32::MIN && rs2 == -1 {
+                self.regs.set(rd, 0);
+            } else {
+                self.regs.set(rd, (rs1 % rs2) as u32);
+            }
         }
         self.pc += 4;
     }
@@ -441,8 +448,7 @@ impl Cpu {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         if rs2 == 0 {
-            // TODO: Research what the dtekv chip does when dividing by zero
-            panic!("Remainder by zero");
+            self.regs.set(rd, rs1);
         } else {
             self.regs.set(rd, rs1 % rs2);
         }
