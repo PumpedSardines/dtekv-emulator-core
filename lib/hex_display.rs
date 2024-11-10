@@ -11,11 +11,11 @@ impl HexDisplay {
         HexDisplay { displays: [0; 6] }
     }
 
-    pub fn get_display(&self, index: u32) -> u8 {
+    pub fn get(&self, index: u32) -> u8 {
         self.displays[index as usize]
     }
 
-    pub fn set_display(&mut self, index: u32, value: u8) {
+    pub fn set(&mut self, index: u32, value: u8) {
         self.displays[index as usize] = value;
     }
 }
@@ -33,7 +33,7 @@ impl LoadStore for HexDisplay {
             return;
         }
         let addr = addr / 16;
-        self.set_display(addr, byte);
+        self.set(addr, byte);
     }
 }
 

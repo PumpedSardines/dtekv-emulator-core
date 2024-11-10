@@ -1,13 +1,19 @@
-use std::io::{self, Write};
 use crate::LoadStore;
+use std::{io::{self, Write}, sync::mpsc::Sender};
 
 #[derive(Clone)]
-pub struct Uart;
+pub struct Uart {
+    tx: Option<Sender<char>>
+}
 
 impl Uart {
     /// Returns a new Memory object with a given size all set to 0
     pub fn new() -> Self {
-        Uart {}
+        Uart { tx: None }
+    }
+
+    pub fn set_tx(&mut self, tx: Sender<char>) {
+        self.tx = Some(tx);
     }
 }
 
@@ -27,9 +33,12 @@ impl LoadStore for Uart {
         }
 
         if addr == 0 {
-            // Send the byte
-            print!("{}", byte as char);
-            io::stdout().flush().unwrap();
+            if let Some(tx) = &self.tx {
+                tx.send(byte as char).unwrap();
+            } else {
+                print!("{}", byte as char);
+                io::stdout().flush().unwrap();
+            }
         }
     }
 }

@@ -17,7 +17,7 @@ impl Switch {
         }
     }
 
-    pub fn set_switch(&mut self, index: u32, high: bool) {
+    pub fn set(&mut self, index: u32, high: bool) {
         if high {
             self.state |= 1 << index;
         } else {
@@ -27,7 +27,7 @@ impl Switch {
         self.edge_cap |= 1 << index;
     }
 
-    pub fn get_switch(&self, index: u32) -> bool {
+    pub fn get(&self, index: u32) -> bool {
         (self.state & (1 << index)) != 0
     }
 

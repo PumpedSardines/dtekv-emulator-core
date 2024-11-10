@@ -25,8 +25,8 @@ pub use regs::Regs;
 mod instruction;
 pub(crate) use instruction::Instruction;
 
-mod gui;
-pub use gui::gui;
+// mod gui;
+// pub use gui::gui;
 
 pub(crate) mod csr;
 

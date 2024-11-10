@@ -1,4 +1,5 @@
 use crate::LoadStore;
+use image::{Rgb, RgbImage};
 
 #[derive(Clone)]
 pub struct Vga {
@@ -20,6 +21,17 @@ impl Vga {
         let blue = pixel & 0b00000011;
 
         ((red >> 5) * 32, (green >> 2) * 32, blue * 85)
+    }
+
+    pub fn to_rbg_image(&self) -> RgbImage {
+        let mut img = RgbImage::new(320, 240);
+
+        for (x, y, pixel) in img.enumerate_pixels_mut() {
+            let (r, g, b) = self.get_pixel(x, y);
+            *pixel = Rgb([r, g, b]);
+        }
+
+        img
     }
 }
 
