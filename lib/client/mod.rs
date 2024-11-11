@@ -2,10 +2,10 @@
 mod website_source_code {
     use const_format::str_replace;
 
-    #[cfg(target_os = "macos")]
-    pub const HOST: &'static str = "wry://localhost/";
     #[cfg(target_os = "windows")]
-    pub const HOST: &'static str = "http://wry.";
+    pub const HOST: &'static str = "wry://localhost/";
+    #[cfg(target_os = "macos")]
+    pub const HOST: &'static str = "http://wry.com/";
 
     pub const INDEX_HTML: &str = str_replace!(include_str!("./website/index.html"), "{{HOST}}", HOST);
     pub const CSS_STYLE_CSS: &str = include_str!("./website/css/style.css");
