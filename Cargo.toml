@@ -11,6 +11,7 @@ path = "lib/lib.rs"
 
 [dependencies]
 base64 = "0.22.1"
+const_format = "0.2.33"
 http = "1.1.0"
 image = "0.25.5"
 tao = "0.30.5"

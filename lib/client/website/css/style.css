@@ -55,7 +55,6 @@ hr {
 main {
   display: grid;
   grid-template:
-    /*"d d d" 30px */
     "a a c" auto
     "b b b" 150px / 1fr 1fr 400px;
   height: 100vh;
