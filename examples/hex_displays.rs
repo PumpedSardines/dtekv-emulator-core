@@ -3,6 +3,6 @@
 fn main() {
     let mut cpu = dtekv_emulator::cpu::Cpu::new();
     cpu.bus
-        .load_at(0, *include_bytes!("./board_games.bin"));
+        .load_at(0, *include_bytes!("./hex_displays.bin"));
     dtekv_emulator::client::start(cpu);
 }

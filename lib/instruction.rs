@@ -59,7 +59,6 @@ pub enum Instruction {
     CSRRSI { uimm: u8, rd: u8, imm: u32 },
     CSRRCI { uimm: u8, rd: u8, imm: u32 },
     MRET,
-    SRET,
     ECALL,
     MUL { rd: u8, rs1: u8, rs2: u8 },
     MULH { rd: u8, rs1: u8, rs2: u8 },
@@ -328,7 +327,6 @@ impl TryFrom<u32> for Instruction {
             SYSTEM => match funct3 {
                 MRET_SRET_ECALL => match raw {
                     MRET => Ok(Instruction::MRET),
-                    SRET => Ok(Instruction::SRET),
                     ECALL => Ok(Instruction::ECALL),
                     _ => Err(()),
                 },

@@ -5,7 +5,7 @@ use dtekv_emulator::*;
 fn test_factorial_riscv_program() {
     // Factorial program using only ADDI, ADD, and BEQ, result stored in x7
 
-    let mut cpu = Cpu::new();
+    let mut cpu = cpu::Cpu::new();
     let bin: Vec<u32> = vec![
         // 00000000 <factorial_loop-0x8>:
         0x00800293, // li t0,8
@@ -37,7 +37,7 @@ fn test_factorial_riscv_program() {
 
 #[test]
 fn test_sieves_c_program() {
-    let mut cpu = Cpu::new();
+    let mut cpu = cpu::Cpu::new();
     // Set stack pointer somewhere
     cpu.regs.set(2, 0x2000);
     // Testing the following C program is compiled to RISC-V assembly
@@ -160,7 +160,7 @@ fn test_sieves_c_program() {
 
     for i in 0..100 {
         assert_eq!(
-            cpu.bus.load_byte(0x100 + i),
+            cpu.bus.load_byte(0x100 + i).unwrap(),
             if is_prime(i) { 1 } else { 0 }
         );
     }
@@ -168,7 +168,7 @@ fn test_sieves_c_program() {
 
 #[test]
 fn test_sieves_c_program_o3() {
-    let mut cpu = Cpu::new();
+    let mut cpu = cpu::Cpu::new();
     // Set stack pointer somewhere
     cpu.regs.set(2, 0x2000);
     // Testing the following C program is compiled to RISC-V assembly with the 03 optimization flag
@@ -275,7 +275,7 @@ fn test_sieves_c_program_o3() {
 
     for i in 0..100 {
         assert_eq!(
-            cpu.bus.load_byte(0x100 + i),
+            cpu.bus.load_byte(0x100 + i).unwrap(),
             if is_prime(i) { 1 } else { 0 }
         );
     }

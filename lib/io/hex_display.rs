@@ -1,4 +1,4 @@
-use crate::LoadStore;
+use crate::Data;
 
 #[derive(Clone)]
 pub struct HexDisplay {
@@ -20,20 +20,25 @@ impl HexDisplay {
     }
 }
 
-impl LoadStore for HexDisplay {
-    fn load_byte(&self, _addr: u32) -> u8 {
-        // ahrd wired to 0
-        0
+impl Data<()> for HexDisplay {
+    fn load_byte(&self, _addr: u32) -> Result<u8, ()> {
+        // hard wired to 0
+        Ok(0)
     }
 
-    fn store_byte(&mut self, addr: u32, byte: u8) {
+    fn store_byte(&mut self, addr: u32, byte: u8) -> Result<(), ()> {
         let lower_addr = addr % 4;
         if lower_addr != 0 {
-            // Doesn't matter, hard wired to 0
-            return;
+            // Doesn't matter
+            return Ok(());
         }
         let addr = addr / 16;
+        if addr >= 6 {
+            panic!("Invalid hex display address: {}", addr);
+        }
         self.set(addr, byte);
+
+        Ok(())
     }
 }
 

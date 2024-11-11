@@ -1,4 +1,4 @@
-use crate::LoadStore;
+use crate::Data;
 use std::time::{Duration, Instant};
 
 const CLOCK_FEQ: u32 = 30_000_000;
@@ -10,14 +10,14 @@ const CLOCK_FEQ: u32 = 30_000_000;
 
 #[derive(Clone)]
 pub struct Timer {
-    pub state: u32,
-    pub period: u32,
-    pub running: bool,
-    pub time_out: bool,
-    pub cont: bool,
-    pub irq: bool,
-    pub period_duration: Duration,
-    pub clock_start: Instant,
+    state: u32,
+    period: u32,
+    running: bool,
+    time_out: bool,
+    cont: bool,
+    irq: bool,
+    period_duration: Duration,
+    clock_start: Instant,
 }
 
 impl Timer {
@@ -48,7 +48,7 @@ impl Timer {
             Duration::from_nanos(((self.period as u64) * 1_000_000_000) / CLOCK_FEQ as u64);
     }
 
-    pub fn update(&mut self) {
+    pub fn clock(&mut self) {
         if self.running {
             let elapsed = self.clock_start.elapsed();
             if elapsed >= self.period_duration {
@@ -63,12 +63,12 @@ impl Timer {
     }
 }
 
-impl LoadStore for Timer {
-    fn load_byte(&self, addr: u32) -> u8 {
+impl Data<()> for Timer {
+    fn load_byte(&self, addr: u32) -> Result<u8, ()> {
         let part = addr / 4;
         let i = addr % 4;
 
-        match part {
+        Ok(match part {
             0 => {
                 if i == 0 {
                     let mut res: u8 = 0;
@@ -104,10 +104,10 @@ impl LoadStore for Timer {
                 }
             }
             _ => 0,
-        }
+        })
     }
 
-    fn store_byte(&mut self, addr: u32, byte: u8) {
+    fn store_byte(&mut self, addr: u32, byte: u8) -> Result<(), ()> {
         let part = addr / 4;
         let i = addr % 4;
 
@@ -156,8 +156,10 @@ impl LoadStore for Timer {
                     _ => {}
                 }
             }
-            _ => unreachable!(),
+            _ => unreachable!("The timer address space is only 4 words long, if this error happens, update the bus module"),
         };
+
+        Ok(())
     }
 }
 

@@ -1,10 +1,10 @@
-use crate::LoadStore;
+use crate::{utils, Data};
 
 #[derive(Clone)]
 pub struct Switch {
-    pub state: u32,
-    pub interrupt_mask: u32,
-    pub edge_cap: u32,
+    state: u32,
+    interrupt_mask: u32,
+    edge_cap: u32,
 }
 
 impl Switch {
@@ -36,34 +36,34 @@ impl Switch {
     }
 }
 
-impl LoadStore for Switch {
-    fn load_byte(&self, addr: u32) -> u8 {
+impl Data<()> for Switch {
+    fn load_byte(&self, addr: u32) -> Result<u8, ()> {
         // TODO: Edge capture
-        match addr {
+        Ok(match addr {
             0 => (self.state & 0xFF) as u8,
             1 => ((self.state >> 8) & 0x3) as u8,
             _ => 0,
-        }
+        })
     }
 
-    fn store_byte(&mut self, addr: u32, byte: u8) {
+    fn store_byte(&mut self, addr: u32, byte: u8) -> Result<(), ()> {
         let part = addr / 4;
         // Do nothing, hardwired to nothing
         match part {
             0 => {} // Data address, can store here
             1 => {} // Direction address, can store here, but changes nothing
-            2 => { // Interrupt mask
-                let i = addr % 4;
-                self.interrupt_mask =
-                    (self.interrupt_mask & !(0xFF << (i * 8))) | (byte as u32) << (i * 8);
+            2 => {
+                // Interrupt mask
+ self.interrupt_mask =               utils::set_in_u32(self.interrupt_mask, byte, addr);
             }
-            3 => { // Edge capture
-                let i = addr % 4;
-                self.edge_cap =
-                    (self.edge_cap & !(0xFF << (i * 8))) | (byte as u32) << (i * 8);
+            3 => {
+                // Edge capture
+ self.edge_cap =               utils::set_in_u32(self.edge_cap, byte, addr);
             }
-            _ => unreachable!(),
+            _ => unreachable!("The switch address space is only 4 words long, if this error happens, update the bus module"),
         };
+
+        Ok(())
     }
 }
 

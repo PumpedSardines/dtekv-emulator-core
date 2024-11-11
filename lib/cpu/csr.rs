@@ -16,6 +16,12 @@ impl Csr {
         }
     }
 
+    pub fn reset(&mut self) {
+        for csr in self.csrs.iter_mut() {
+            *csr = 0;
+        }
+    }
+
     pub fn get_mstatus_mpie(&self) -> bool {
         self.csrs[MSTATUS as usize] & (1 << 7) != 0
     }
@@ -49,11 +55,11 @@ impl Csr {
     }
 
 
-    pub fn read(&self, addr: u32) -> u32 {
+    pub fn load(&self, addr: u32) -> u32 {
         self.csrs[addr as usize]
     }
 
-    pub fn write(&mut self, addr: u32, value: u32) {
+    pub fn store(&mut self, addr: u32, value: u32) {
         self.csrs[addr as usize] = value;
     }
 }

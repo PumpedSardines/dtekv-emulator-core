@@ -1,36 +1,12 @@
-mod memory;
-pub use memory::Memory;
-mod hex_display;
-pub use hex_display::HexDisplay;
-mod switch;
-pub use switch::Switch;
-mod button;
-pub use button::Button;
-mod uart;
-pub use uart::Uart;
-mod vga;
-pub use vga::Vga;
-mod timer;
-pub use timer::Timer;
-
-mod bus;
-pub use bus::Bus;
-
-mod cpu;
-pub use cpu::Cpu;
-
-mod regs;
-pub use regs::Regs;
-
-mod instruction;
-pub(crate) use instruction::Instruction;
-
-// mod gui;
-// pub use gui::gui;
-
-pub(crate) mod csr;
-
 mod data;
-pub use data::{Data, LoadStore};
+pub use data::Data;
 
-pub(crate) mod exception;
+pub mod exception;
+pub mod instruction;
+
+pub mod io;
+pub mod cpu;
+
+pub(crate) mod utils;
+
+pub mod client;

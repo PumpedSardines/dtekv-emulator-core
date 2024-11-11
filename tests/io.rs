@@ -5,7 +5,7 @@ use dtekv_emulator::*;
 fn test_hex_display() {
     // Program that stores the bit mask for the number 9 in the hex display
 
-    let mut cpu = Cpu::new();
+    let mut cpu = cpu::Cpu::new();
     let bin: Vec<u32> = vec![
         0x09000293, // li t0, 144
         0x04000337, // lui t1, 0x4000
@@ -15,21 +15,21 @@ fn test_hex_display() {
         0x0000006f, // j 10 <end>
     ];
     for (i, instr) in bin.iter().enumerate() {
-        cpu.bus.store_word(i as u32 * 4, *instr);
+        cpu.bus.store_word(i as u32 * 4, *instr).unwrap();
     }
     // Roughly the amount of cycles needed to calculate 8 factorial with the above program
     for _ in 0..10 {
         cpu.clock();
     }
 
-    assert_eq!(cpu.bus.hex_display.get_display(0), 144);
+    assert_eq!(cpu.bus.hex_display.get(0), 144);
 }
 
 #[test]
 fn test_switch_display() {
     // Program that stores the bit mask for the number 9 in the hex display
 
-    let mut cpu = Cpu::new();
+    let mut cpu = cpu::Cpu::new();
     let bin: Vec<u32> = vec![
         0x04000337, // lui t1, 0x4000
         0x01030313, // add t1, t1,16 # 4000010 <end+0x4000004>
@@ -38,11 +38,11 @@ fn test_switch_display() {
         0x0000006f, // j c <end>
     ];
     for (i, instr) in bin.iter().enumerate() {
-        cpu.bus.store_word(i as u32 * 4, *instr);
+        cpu.bus.store_word(i as u32 * 4, *instr).unwrap();
     }
 
-    cpu.bus.switch.set_switch(0, true);
-    cpu.bus.switch.set_switch(2, true);
+    cpu.bus.switch.set(0, true);
+    cpu.bus.switch.set(2, true);
     // Roughly the amount of cycles needed to calculate 8 factorial with the above program
     for _ in 0..10 {
         cpu.clock();

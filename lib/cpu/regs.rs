@@ -23,6 +23,12 @@ impl Regs {
         }
         self.registers[reg as usize - 1] = val;
     }
+
+    pub fn reset(&mut self) {
+        for reg in self.registers.iter_mut() {
+            *reg = 0;
+        }
+    }
 }
 
 impl std::fmt::Debug for Regs {
