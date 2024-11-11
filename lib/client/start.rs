@@ -54,6 +54,13 @@ pub fn start(cpu: Cpu) {
 
                     http::Response::builder()
                         .header(CONTENT_TYPE, "image/png")
+                        .header("Access-Control-Allow-Origin", "*")
+                        .header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+                        .header("Access-Control-Allow-Headers", "Content-Type")
+                        .header("Access-Control-Max-Age", "3600")
+                        .header("Access-Control-Allow-Credentials", "true")
+                        .header("Access-Control-Expose-Headers", "*")
+                        .header("Access-Control-Allow-Headers", "*")
                         .body(buffer)
                         .unwrap()
                         .map(Into::into)
@@ -63,6 +70,13 @@ pub fn start(cpu: Cpu) {
 
                     http::Response::builder()
                         .header(CONTENT_TYPE, "text/plain")
+                        .header("Access-Control-Allow-Origin", "*")
+                        .header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+                        .header("Access-Control-Allow-Headers", "Content-Type")
+                        .header("Access-Control-Max-Age", "3600")
+                        .header("Access-Control-Allow-Credentials", "true")
+                        .header("Access-Control-Expose-Headers", "*")
+                        .header("Access-Control-Allow-Headers", "*")
                         .body(b"OK".to_vec())
                         .unwrap()
                         .map(Into::into)
@@ -134,6 +148,13 @@ fn get_wry_response(
             let content = website_source_code::INDEX_HTML.bytes().collect::<Vec<u8>>();
             let response = http::Response::builder()
                 .header(CONTENT_TYPE, "text/html")
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+                .header("Access-Control-Allow-Headers", "Content-Type")
+                .header("Access-Control-Max-Age", "3600")
+                .header("Access-Control-Allow-Credentials", "true")
+                .header("Access-Control-Expose-Headers", "*")
+                .header("Access-Control-Allow-Headers", "*")
                 .body(content)?;
             return Ok(ResponseEvent::Response(response));
         }
@@ -162,12 +183,26 @@ fn get_wry_response(
                 .collect::<Vec<u8>>();
             let response = http::Response::builder()
                 .header(CONTENT_TYPE, "text/css")
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+                .header("Access-Control-Allow-Headers", "Content-Type")
+                .header("Access-Control-Max-Age", "3600")
+                .header("Access-Control-Allow-Credentials", "true")
+                .header("Access-Control-Expose-Headers", "*")
+                .header("Access-Control-Allow-Headers", "*")
                 .body(content)?;
             return Ok(ResponseEvent::Response(response));
         }
         "/ping" => {
             let response = http::Response::builder()
                 .header(CONTENT_TYPE, "text/plain")
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+                .header("Access-Control-Allow-Headers", "Content-Type")
+                .header("Access-Control-Max-Age", "3600")
+                .header("Access-Control-Allow-Credentials", "true")
+                .header("Access-Control-Expose-Headers", "*")
+                .header("Access-Control-Allow-Headers", "*")
                 .body(b"pong".to_vec())?;
             return Ok(ResponseEvent::Response(response));
         }
@@ -177,6 +212,13 @@ fn get_wry_response(
                 .collect::<Vec<u8>>();
             let response = http::Response::builder()
                 .header(CONTENT_TYPE, "application/javascript")
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+                .header("Access-Control-Allow-Headers", "Content-Type")
+                .header("Access-Control-Max-Age", "3600")
+                .header("Access-Control-Allow-Credentials", "true")
+                .header("Access-Control-Expose-Headers", "*")
+                .header("Access-Control-Allow-Headers", "*")
                 .body(content)?;
             return Ok(ResponseEvent::Response(response));
         }
