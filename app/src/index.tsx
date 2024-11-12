@@ -3,14 +3,12 @@ import * as ReactDOM from "react-dom/client";
 
 import './global.scss';
 import HexDisplay from "./components/HexDisplay";
+import Emulator from "./pages/Emulator";
 
 
 const App = () => {
   return (
-    <div>
-      <HexDisplay value={0x37} />
-      <h1>Hello, DTEKV!</h1>
-    </div>
+    <Emulator />
   );
 };
 

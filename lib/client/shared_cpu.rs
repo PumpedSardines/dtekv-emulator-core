@@ -31,13 +31,14 @@ unsafe impl Send for SharedCpu {}
 impl SharedCpu {
     pub fn new(cpu: Cpu) -> Self {
         let layout = Layout::new::<Cpu>();
-        let cpu_ptr = unsafe {
+        let ptr = unsafe {
             let ptr = alloc(layout);
             ptr::write(ptr as *mut Cpu, cpu);
             ptr
         };
+
         SharedCpu {
-            ptr: cpu_ptr,
+            ptr,
             lock: AtomicBool::new(false),
         }
     }
