@@ -5,12 +5,18 @@ use crate::{
     Data,
 };
 
+// TODO: Implement different instruction speed depending on IO device
+const STORE_CYCLE: u32 = 10;
+const LOAD_CYCLE: u32 = 10;
+
 #[derive(Debug)]
 pub struct Cpu {
     pub bus: Bus,
     pub regs: Regs,
     pub csr: Csr,
     pub pc: u32,
+    pub wait_cycles_emulation: bool,
+    pub wait_cycles: u32,
 }
 
 impl Cpu {
@@ -20,13 +26,20 @@ impl Cpu {
             regs: Regs::new(),
             csr: Csr::new(),
             pc: 0,
+            wait_cycles_emulation: false,
+            wait_cycles: 0,
         }
+    }
+
+    pub fn enable_wait_cycles(&mut self) {
+        self.wait_cycles_emulation = true;
     }
 
     pub fn reset(&mut self) {
         self.regs.reset();
         self.csr.reset();
         self.pc = 4;
+        self.wait_cycles = 0;
         // NOTE: Not sure if this happens when reset is triggered:
         self.csr.set_mstatus_mie(true);
     }
@@ -123,6 +136,8 @@ impl Cpu {
     }
 
     fn lb(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+        self.add_wait_cycles(LOAD_CYCLE);
+
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
         let byte = self.bus.load_byte(addr)?;
@@ -132,6 +147,8 @@ impl Cpu {
     }
 
     fn lh(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+        self.add_wait_cycles(LOAD_CYCLE);
+
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
         let halfword = self.bus.load_halfword(addr)?;
@@ -141,6 +158,8 @@ impl Cpu {
     }
 
     fn lw(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+        self.add_wait_cycles(LOAD_CYCLE);
+
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
         let word = self.bus.load_word(addr)?;
@@ -150,6 +169,8 @@ impl Cpu {
     }
 
     fn lbu(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+        self.add_wait_cycles(LOAD_CYCLE);
+
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
         let byte = self.bus.load_byte(addr)?;
@@ -159,6 +180,8 @@ impl Cpu {
     }
 
     fn lhu(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+        self.add_wait_cycles(LOAD_CYCLE);
+
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
         let halfword = self.bus.load_halfword(addr)?;
@@ -168,6 +191,8 @@ impl Cpu {
     }
 
     fn sb(&mut self, rs1: u8, rs2: u8, imm: u32) -> Result<(), ()> {
+        self.add_wait_cycles(STORE_CYCLE);
+
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
@@ -177,6 +202,8 @@ impl Cpu {
     }
 
     fn sh(&mut self, rs1: u8, rs2: u8, imm: u32) -> Result<(), ()> {
+        self.add_wait_cycles(STORE_CYCLE);
+
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
@@ -186,6 +213,8 @@ impl Cpu {
     }
 
     fn sw(&mut self, rs1: u8, rs2: u8, imm: u32) -> Result<(), ()> {
+        self.add_wait_cycles(STORE_CYCLE);
+
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
@@ -603,14 +632,26 @@ impl Cpu {
         self.interrupt(cause);
     }
 
-    pub fn clock(&mut self) {
-        let instr: Result<Instruction, u32> = self.fetch_instruction();
+    pub fn add_wait_cycles(&mut self, cycles: u32) {
+        if !self.wait_cycles_emulation {
+            return;
+        }
+        self.wait_cycles += cycles;
+    }
 
-        if let Ok(instr) = instr {
-            self.exec_instruction(instr)
-                .expect("In the future exec_instruction shouldn't return an error");
-        } else {
-            self.interrupt(instr.unwrap_err());
+    pub fn clock(&mut self) {
+        match self.wait_cycles {
+            0 => {
+                let instr: Result<Instruction, u32> = self.fetch_instruction();
+
+                if let Ok(instr) = instr {
+                    self.exec_instruction(instr)
+                        .expect("In the future exec_instruction shouldn't return an error");
+                } else {
+                    self.interrupt(instr.unwrap_err());
+                }
+            }
+            _ => self.wait_cycles -= 1,
         }
     }
 }

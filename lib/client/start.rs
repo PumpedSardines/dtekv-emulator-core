@@ -1,4 +1,4 @@
-use super::{unsafe_cpu::UnsafeCpu, website_source_code, CpuEvent, GuiEvent, ResponseEvent};
+use super::{unsafe_cpu::UnsafeCpu, website_source_code, Cors, CpuEvent, GuiEvent, ResponseEvent};
 use crate::cpu::Cpu;
 use crate::exception;
 use image::ImageFormat;
@@ -54,13 +54,7 @@ pub fn start(cpu: Cpu) {
 
                     http::Response::builder()
                         .header(CONTENT_TYPE, "image/png")
-                        .header("Access-Control-Allow-Origin", "*")
-                        .header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-                        .header("Access-Control-Allow-Headers", "Content-Type")
-                        .header("Access-Control-Max-Age", "3600")
-                        .header("Access-Control-Allow-Credentials", "true")
-                        .header("Access-Control-Expose-Headers", "*")
-                        .header("Access-Control-Allow-Headers", "*")
+                        .cors()
                         .body(buffer)
                         .unwrap()
                         .map(Into::into)
@@ -70,13 +64,7 @@ pub fn start(cpu: Cpu) {
 
                     http::Response::builder()
                         .header(CONTENT_TYPE, "text/plain")
-                        .header("Access-Control-Allow-Origin", "*")
-                        .header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-                        .header("Access-Control-Allow-Headers", "Content-Type")
-                        .header("Access-Control-Max-Age", "3600")
-                        .header("Access-Control-Allow-Credentials", "true")
-                        .header("Access-Control-Expose-Headers", "*")
-                        .header("Access-Control-Allow-Headers", "*")
+                        .cors()
                         .body(b"OK".to_vec())
                         .unwrap()
                         .map(Into::into)
@@ -125,6 +113,9 @@ pub fn start(cpu: Cpu) {
                         a, b, c, d, e, f
                     ))
                     .unwrap(),
+                CpuEvent::VgaUpdate => webview
+                    .evaluate_script("window.__dtekv__.updateVga()")
+                    .unwrap(),
             }
         }
 
@@ -148,13 +139,7 @@ fn get_wry_response(
             let content = website_source_code::INDEX_HTML.bytes().collect::<Vec<u8>>();
             let response = http::Response::builder()
                 .header(CONTENT_TYPE, "text/html")
-                .header("Access-Control-Allow-Origin", "*")
-                .header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-                .header("Access-Control-Allow-Headers", "Content-Type")
-                .header("Access-Control-Max-Age", "3600")
-                .header("Access-Control-Allow-Credentials", "true")
-                .header("Access-Control-Expose-Headers", "*")
-                .header("Access-Control-Allow-Headers", "*")
+                .cors()
                 .body(content)?;
             return Ok(ResponseEvent::Response(response));
         }
@@ -177,48 +162,23 @@ fn get_wry_response(
 
             Ok(ResponseEvent::GuiEvent(GuiEvent::SwitchToggle(index, on)))
         }
-        "/style.css" => {
+        "/css/style.css" => {
             let content = website_source_code::CSS_STYLE_CSS
                 .bytes()
                 .collect::<Vec<u8>>();
             let response = http::Response::builder()
                 .header(CONTENT_TYPE, "text/css")
-                .header("Access-Control-Allow-Origin", "*")
-                .header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-                .header("Access-Control-Allow-Headers", "Content-Type")
-                .header("Access-Control-Max-Age", "3600")
-                .header("Access-Control-Allow-Credentials", "true")
-                .header("Access-Control-Expose-Headers", "*")
-                .header("Access-Control-Allow-Headers", "*")
+                .cors()
                 .body(content)?;
             return Ok(ResponseEvent::Response(response));
         }
-        "/ping" => {
-            let response = http::Response::builder()
-                .header(CONTENT_TYPE, "text/plain")
-                .header("Access-Control-Allow-Origin", "*")
-                .header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-                .header("Access-Control-Allow-Headers", "Content-Type")
-                .header("Access-Control-Max-Age", "3600")
-                .header("Access-Control-Allow-Credentials", "true")
-                .header("Access-Control-Expose-Headers", "*")
-                .header("Access-Control-Allow-Headers", "*")
-                .body(b"pong".to_vec())?;
-            return Ok(ResponseEvent::Response(response));
-        }
-        "/index.js" => {
+        "/js/index.js" => {
             let content = website_source_code::JS_INDEX_JS
                 .bytes()
                 .collect::<Vec<u8>>();
             let response = http::Response::builder()
                 .header(CONTENT_TYPE, "application/javascript")
-                .header("Access-Control-Allow-Origin", "*")
-                .header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-                .header("Access-Control-Allow-Headers", "Content-Type")
-                .header("Access-Control-Max-Age", "3600")
-                .header("Access-Control-Allow-Credentials", "true")
-                .header("Access-Control-Expose-Headers", "*")
-                .header("Access-Control-Allow-Headers", "*")
+                .cors()
                 .body(content)?;
             return Ok(ResponseEvent::Response(response));
         }
@@ -237,10 +197,13 @@ fn start_cpu_thread(
         #[cfg(debug_assertions)]
         const CLOCK_CYCLES: u64 = 20_000;
         #[cfg(not(debug_assertions))]
-        const CLOCK_CYCLES: u64 = 500_000;
+        const CLOCK_CYCLES: u64 = 250_000;
+
+        #[cfg(not(debug_assertions))]
+        cpu.enable_wait_cycles();
 
         let mut last_update = Instant::now();
-        const DESIRED_FPS: u32 = 60;
+        const DESIRED_FPS: u32 = 120;
         let duration = Duration::from_millis(1000 / DESIRED_FPS as u64);
 
         loop {
@@ -291,6 +254,11 @@ fn start_cpu_thread(
                     cpu.bus.hex_display.get(4),
                 ))
                 .unwrap();
+            
+            if cpu.bus.vga.has_changed() {
+                cpu_tx.send(CpuEvent::VgaUpdate).unwrap();
+                cpu.bus.vga.reset_has_changed();
+            }
 
             while last_update.elapsed() < duration {
                 thread::sleep(Duration::from_millis(1));
