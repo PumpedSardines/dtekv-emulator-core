@@ -22,6 +22,12 @@ impl Uart {
     }
 }
 
+impl Default for Uart {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Iterator for Uart {
     type Item = char;
 

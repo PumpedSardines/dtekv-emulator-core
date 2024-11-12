@@ -20,6 +20,13 @@ pub struct Timer {
     clock_start: Instant,
 }
 
+
+impl Default for Timer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Timer {
     /// Returns a new Memory object with a given size all set to 0
     pub fn new() -> Self {

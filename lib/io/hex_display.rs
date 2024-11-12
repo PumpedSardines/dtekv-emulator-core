@@ -20,6 +20,12 @@ impl HexDisplay {
     }
 }
 
+impl Default for HexDisplay {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Data<()> for HexDisplay {
     fn load_byte(&self, _addr: u32) -> Result<u8, ()> {
         // hard wired to 0

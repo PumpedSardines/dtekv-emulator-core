@@ -4,18 +4,17 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script>
-      window.__dtekv__ = {};
-      window.__dtekv__.host = "{{HOST}}";
-    </script>
+    <script defer src="{{HOST}}/js/__dtekv__.js"></script>
+    <script defer src="{{HOST}}/js/index.js"></script>
     <link rel="stylesheet" href="{{HOST}}/css/style.css" />
   </head>
   <body>
     <main>
-      <!--<div class="d">
+      <div class="d">
         <button id="load">Load</button>
         <button id="reset">Reset</button>
-      </div>-->
+        <button id="help">Help</button>
+      </div>
       <div class="a">
         <p>VGA Output:</p>
         <div class="vga-outer">
@@ -25,8 +24,7 @@
         </div>
       </div>
       <div class="b">
-        <div id="hex-displays">
-        </div>
+        <div id="hex-displays"></div>
         <div class="left-most">
           <div class="switches"></div>
           <button class="button"><div></div></button>
@@ -38,5 +36,4 @@
       </div>
     </main>
   </body>
-  <script defer src="{{HOST}}/js/index.js"></script>
 </html>

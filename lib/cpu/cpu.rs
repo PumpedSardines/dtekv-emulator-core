@@ -6,8 +6,8 @@ use crate::{
 };
 
 // TODO: Implement different instruction speed depending on IO device
-const STORE_CYCLE: u32 = 10;
-const LOAD_CYCLE: u32 = 10;
+const STORE_CYCLE: u32 = 40;
+const LOAD_CYCLE: u32 = 40;
 
 #[derive(Debug)]
 pub struct Cpu {

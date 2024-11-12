@@ -55,6 +55,7 @@ hr {
 main {
   display: grid;
   grid-template:
+    "d d d" 30px
     "a a c" auto
     "b b b" 150px / 1fr 1fr 400px;
   height: 100vh;
@@ -140,11 +141,12 @@ main {
 }
 
 .hex-segment {
-  width: 5px;
+  width: 10px;
   height: 60px;
   background-color: var(--color-hex-display-off);
   position: absolute;
-  border-radius: 100px;
+  /* border-radius: 100px; */
+  clip-path: polygon(50% 0, 100% 10%, 100% 90%, 50% 100%, 0 90%, 0 10%);
 }
 
 .hex-segment.on {
@@ -175,7 +177,9 @@ main {
 .hex-segment:nth-child(4),
 .hex-segment:nth-child(7) {
   width: 55px;
-  height: 5px;
+  height: 10px;
+
+  clip-path: polygon(10% 0, 90% 0, 100% 50%, 90% 100%, 10% 100%, 0 50%);
 }
 
 .hex-segment:nth-child(1) {
@@ -185,7 +189,7 @@ main {
 
 .hex-segment:nth-child(7) {
   left: 10px;
-  top: 72.5px;
+  top: 70px;
 }
 
 .hex-segment:nth-child(4) {
@@ -194,10 +198,18 @@ main {
 }
 
 .hex-segment:nth-child(8) {
-  width: 5px;
-  height: 5px;
+  width: 7.5px;
+  height: 7.5px;
   right: 2.5px;
-  bottom: 5px;
+  bottom: 2.5px;
+  clip-path: polygon(30% 0%,
+      70% 0%,
+      100% 30%,
+      100% 70%,
+      70% 100%,
+      30% 100%,
+      0% 70%,
+      0 30%);
 }
 
 .left-most {
@@ -240,6 +252,7 @@ main {
 .switch.on>div {
   background-color: var(--color-io-switch-on);
 }
+
 .switch.on>div>div {
   top: 0px;
 }

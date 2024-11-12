@@ -9,6 +9,12 @@ pub struct Memory {
     mem: Vec<u8>,
 }
 
+impl Default for Memory {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Memory {
     pub fn new() -> Memory {
         Memory { mem: vec![0; SDRAM_SIZE] }

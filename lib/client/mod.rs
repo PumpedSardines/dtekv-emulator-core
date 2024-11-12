@@ -9,8 +9,13 @@ mod website_source_code {
 
     pub const INDEX_HTML: &str =
         str_replace!(include_str!("./website/index.html"), "{{HOST}}", HOST);
+    pub const HELP_INDEX: &str =
+        str_replace!(include_str!("./website/help.html"), "{{HOST}}", HOST);
+
     pub const CSS_STYLE_CSS: &str = include_str!("./website/css/style.css");
     pub const JS_INDEX_JS: &str = include_str!("./website/js/index.js");
+    pub const JS_DTEKV_JS: &str =
+        str_replace!(include_str!("./website/js/__dtekv__.js"), "{{HOST}}", HOST);
 }
 
 trait Cors {
@@ -32,7 +37,7 @@ pub use tao::dpi::LogicalSize;
 
 pub mod start;
 pub use start::start;
-mod unsafe_cpu;
+mod shared_cpu;
 
 enum ResponseEvent {
     GuiEvent(GuiEvent),
@@ -46,10 +51,14 @@ enum GuiEvent {
     SwitchToggle(u32, bool),
     VgaUpdate,
     Ready,
+    Reset,
+    OpenLinkInBrowser(String),
+    Load,
 }
 
 enum CpuEvent {
     Uart(char),
     HexDisplays(u8, u8, u8, u8, u8, u8),
     VgaUpdate,
+    OpenLinkInBrowser(String)
 }
