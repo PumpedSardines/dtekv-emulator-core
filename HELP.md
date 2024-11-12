@@ -1,1 +1,0 @@
-# DTEK-V Emulator Help

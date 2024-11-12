@@ -1,15 +1,7 @@
 <div align="center">
-    <h1>DTEK-V emulator</h1>
-    <p>An emulator for the chip that the KTH students taking the IS1500 course have to use</p>
+    <h1>DTEK-V emulator core</h1>
+    <p>Containing the library for emulating the chip students at KTH taking the IS1500 course use</p>
 </div>
-
-![A screenshot of the emulator](./assets/example.png)
-
-<div align="center">
-    <p><i>A preview of my project running in the emulator</i></p>
-</div>
-<br />
-<br />
 
 ## Example:
 

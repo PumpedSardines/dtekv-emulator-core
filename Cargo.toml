@@ -10,18 +10,3 @@ path = "lib/lib.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# For parsing the static files and adding compile time variables
-const_format = "0.2.33"
-# General http helpers for communicating with the web-view
-http = "1.1.0"
-# For parsing VGA output to an image
-image = "0.25.5"
-# For opening external links
-open = "5.3.0"
-# For parsing query params
-url = "2.5.3"
-# For web-view
-wry = "0.46.3"
-tao = "0.30.5"
-# File picker
-rfd = "0.15.0"
