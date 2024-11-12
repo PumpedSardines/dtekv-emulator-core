@@ -8,5 +8,3 @@ pub mod io;
 pub mod cpu;
 
 pub(crate) mod utils;
-
-pub mod client;

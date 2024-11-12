@@ -1,6 +1,4 @@
 use crate::Data;
-use image::{ImageFormat, Rgb, RgbImage};
-use std::io::Cursor;
 
 pub struct Vga {
     pixels: [u8; 320 * 240],
@@ -37,25 +35,6 @@ impl Vga {
         let blue = pixel & 0b00000011;
 
         ((red >> 5) * 32, (green >> 2) * 32, blue * 85)
-    }
-
-    pub fn to_rbg_image(&self) -> RgbImage {
-        let mut img = RgbImage::new(320, 240);
-
-        for (x, y, pixel) in img.enumerate_pixels_mut() {
-            let (r, g, b) = self.get_pixel(x, y);
-            *pixel = Rgb([r, g, b]);
-        }
-
-        img
-    }
-
-    pub fn to_png(&self) -> Vec<u8> {
-        let mut buffer = Vec::new();
-        let img = self.to_rbg_image();
-        img.write_to(&mut Cursor::new(&mut buffer), ImageFormat::Png)
-            .unwrap();
-        buffer
     }
 }
 
