@@ -3,24 +3,24 @@ use std::{cell::RefCell, rc::Rc};
 use crate::{Data, io::Device};
 
 #[derive(Debug)]
-pub struct Bus<'a> {
-    devices: Vec<Rc<RefCell<dyn Device<()> + 'a>>>,
+pub struct Bus {
+    devices: Vec<Rc<RefCell<dyn Device<()>>>>,
 }
 
-impl Default for Bus<'_> {
+impl Default for Bus {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'a> Bus<'a> {
+impl Bus {
     pub fn new() -> Self {
         Bus {
             devices: vec![],
         }
     }
 
-    pub fn attach_device(&mut self, device: Rc<RefCell<dyn Device<()> + 'a>>) {
+    pub fn attach_device(&mut self, device: Rc<RefCell<dyn Device<()>>>) {
         self.devices.push(device);
     }
 
@@ -51,7 +51,7 @@ impl<'a> Bus<'a> {
     }
 }
 
-impl<'a> Data<()> for Bus<'_> {
+impl Data<()> for Bus {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
         for device in &self.devices {
             let device = device.borrow();

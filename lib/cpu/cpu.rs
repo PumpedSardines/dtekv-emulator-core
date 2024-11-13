@@ -19,8 +19,8 @@ pub struct Cpu<T: Data<()>> {
     pub wait_cycles: u32,
 }
 
-impl<'a> Cpu<Bus<'a>> {
-    pub fn new() -> Cpu<Bus<'a>> {
+impl Cpu<Bus> {
+    pub fn new() -> Cpu<Bus> {
         Cpu {
             bus: Bus::new(),
             regs: Regs::new(),
