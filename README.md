@@ -3,17 +3,7 @@
     <p>Containing the library for emulating the chip students at KTH taking the IS1500 course use</p>
 </div>
 
-## Example:
-
-Run `cargo run --examples board_games` to see the emulator in action
-
-## How to use:
-
-Run `dtekv_emulator path/to/bin.bin`, or if you're running directly from this folder: `cargo run --release "path/to/bin.bin"`
-
-This project can take the binary you upload to the dtek-v board and run it in an emulated environment, making it easier to develop your programs without having to upload to the chip every time you want to debug.
-
-## Supported IO devices:
+## Implemented IO devices:
 
 - Button
 - Switch
@@ -79,14 +69,6 @@ This project can take the binary you upload to the dtek-v board and run it in an
 - [X] DIVU
 - [X] REM
 - [X] REMU
-
-## Supported CSR
-
-- mstatus
-- mcause
-- mepc
-- mie
-- mpie
 
 ## Supported Modes
 
