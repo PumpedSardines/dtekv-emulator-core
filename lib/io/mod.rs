@@ -5,22 +5,22 @@ mod interruptable;
 pub use interruptable::Interruptable;
 
 mod button;
-pub use button::Button;
+pub use button::*;
 
 mod hex_display;
-pub use hex_display::HexDisplay;
+pub use hex_display::*;
 
 mod memory;
-pub use memory::Memory;
+pub use memory::*;
 
 mod switch;
-pub use switch::Switch;
+pub use switch::*;
 
 mod timer;
-pub use timer::Timer;
+pub use timer::*;
 
 mod uart;
-pub use uart::Uart;
+pub use uart::*;
 
 mod vga;
-pub use vga::Vga;
+pub use vga::*;

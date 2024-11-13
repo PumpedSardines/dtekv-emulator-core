@@ -5,7 +5,7 @@ use dtekv_emulator::*;
 fn test_factorial_riscv_program() {
     // Factorial program using only ADDI, ADD, and BEQ, result stored in x7
 
-    let mut cpu = cpu::Cpu::new();
+    let mut cpu = cpu::Cpu::new_with_bus(io::SDRam::new());
     let bin: Vec<u32> = vec![
         // 00000000 <factorial_loop-0x8>:
         0x00800293, // li t0,8
@@ -26,7 +26,7 @@ fn test_factorial_riscv_program() {
         0x00000063, // beqz zero,2c <end>
     ];
     for (i, instr) in bin.iter().enumerate() {
-        cpu.bus.store_word(i as u32 * 4, *instr);
+        cpu.bus.store_word(i as u32 * 4, *instr).unwrap();
     }
     // Roughly the amount of cycles needed to calculate 8 factorial with the above program
     for _ in 0..200 {
@@ -37,7 +37,7 @@ fn test_factorial_riscv_program() {
 
 #[test]
 fn test_sieves_c_program() {
-    let mut cpu = cpu::Cpu::new();
+    let mut cpu = cpu::Cpu::new_with_bus(io::SDRam::new());
     // Set stack pointer somewhere
     cpu.regs.set(2, 0x2000);
     // Testing the following C program is compiled to RISC-V assembly
@@ -138,7 +138,7 @@ fn test_sieves_c_program() {
     ];
 
     for (i, instr) in bin.iter().enumerate() {
-        cpu.bus.store_word(i as u32 * 4, *instr);
+        cpu.bus.store_word(i as u32 * 4, *instr).unwrap();
     }
     // The amount of cycles needed to calculate 8 factorial with the above program with some
     // extra cycles to ensure the program has finished
@@ -168,7 +168,7 @@ fn test_sieves_c_program() {
 
 #[test]
 fn test_sieves_c_program_o3() {
-    let mut cpu = cpu::Cpu::new();
+    let mut cpu = cpu::Cpu::new_with_bus(io::SDRam::new());
     // Set stack pointer somewhere
     cpu.regs.set(2, 0x2000);
     // Testing the following C program is compiled to RISC-V assembly with the 03 optimization flag
@@ -253,7 +253,7 @@ fn test_sieves_c_program_o3() {
     ];
 
     for (i, instr) in bin.iter().enumerate() {
-        cpu.bus.store_word(i as u32 * 4, *instr);
+        cpu.bus.store_word(i as u32 * 4, *instr).unwrap();
     }
     // The amount of cycles needed to calculate 8 factorial with the above program with some
     // extra cycles to ensure the program has finished

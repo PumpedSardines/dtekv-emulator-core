@@ -1,4 +1,8 @@
-use crate::Data;
+use crate::{Data, io};
+
+
+pub const VGA_LOWER_ADDR: u32 = 0x08000000;
+pub const VGA_HIGHER_ADDR: u32 = 0x80257ff;
 
 pub struct Vga {
     pixels: [u8; 320 * 240],
@@ -38,6 +42,20 @@ impl Vga {
     }
 }
 
+impl io::Device<()> for Vga {
+    fn addr_range(&self) -> (u32, u32) {
+        (VGA_LOWER_ADDR, VGA_HIGHER_ADDR)
+    }
+
+    fn clock(&mut self) {}
+}
+
+impl io::Interruptable for Vga {
+    fn interrupt(&self) -> Option<u32> {
+        None
+    }
+}
+
 impl Data<()> for Vga {
     fn load_byte(&self, _addr: u32) -> Result<u8, ()> {
         // Hard wired to 0
@@ -45,6 +63,10 @@ impl Data<()> for Vga {
     }
 
     fn store_byte(&mut self, addr: u32, byte: u8) -> Result<(), ()> {
+        let addr = addr - VGA_LOWER_ADDR;
+        if addr >= self.pixels.len() as u32 {
+            return Err(());
+        }
         let addr = addr as usize;
         let last_pixel = self.pixels[addr];
         if last_pixel != byte {

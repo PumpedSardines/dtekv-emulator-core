@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 /// Test larger programs using the emulator to ensure the CPU is working correctly
 use dtekv_emulator::*;
 
@@ -5,7 +7,13 @@ use dtekv_emulator::*;
 fn test_hex_display() {
     // Program that stores the bit mask for the number 9 in the hex display
 
-    let mut cpu = cpu::Cpu::new();
+    let mut bus = cpu::Bus::new();
+    let hex_display = Rc::new(RefCell::new(io::HexDisplay::new()));
+    let sdram = Rc::new(RefCell::new(io::SDRam::new()));
+    bus.attach_device(hex_display.clone());
+    bus.attach_device(sdram.clone());
+
+    let mut cpu = cpu::Cpu::new_with_bus(bus);
     let bin: Vec<u32> = vec![
         0x09000293, // li t0, 144
         0x04000337, // lui t1, 0x4000
@@ -22,14 +30,21 @@ fn test_hex_display() {
         cpu.clock();
     }
 
-    assert_eq!(cpu.bus.hex_display.get(0), 144);
+    let hex_display = hex_display.borrow();
+    assert_eq!(hex_display.get(0), 144);
 }
 
 #[test]
 fn test_switch_display() {
     // Program that stores the bit mask for the number 9 in the hex display
 
-    let mut cpu = cpu::Cpu::new();
+    let mut bus = cpu::Bus::new();
+    let switch = Rc::new(RefCell::new(io::Switch::new()));
+    let sdram = Rc::new(RefCell::new(io::SDRam::new()));
+    bus.attach_device(switch.clone());
+    bus.attach_device(sdram.clone());
+
+    let mut cpu = cpu::Cpu::new_with_bus(bus);
     let bin: Vec<u32> = vec![
         0x04000337, // lui t1, 0x4000
         0x01030313, // add t1, t1,16 # 4000010 <end+0x4000004>
@@ -41,8 +56,11 @@ fn test_switch_display() {
         cpu.bus.store_word(i as u32 * 4, *instr).unwrap();
     }
 
-    cpu.bus.switch.set(0, true);
-    cpu.bus.switch.set(2, true);
+    {
+        let mut switch = switch.borrow_mut();
+        switch.set(0, true);
+        switch.set(2, true);
+    }
     // Roughly the amount of cycles needed to calculate 8 factorial with the above program
     for _ in 0..10 {
         cpu.clock();

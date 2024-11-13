@@ -1,16 +1,11 @@
-use crate::Data;
+use crate::{exception, Data, io, cpu};
 use std::time::{Duration, Instant};
 
-const CLOCK_FEQ: u32 = 30_000_000;
-
-// #define IO_TIMER_STATUS_ADDR (volatile int *)0x04000020
-// #define IO_TIMER_CONTROL_ADDR (volatile int *)0x04000024
-// #define IO_TIMER_PERIOD_LOWER_ADDR (volatile int *)0x04000028
-// #define IO_TIMER_PERIOD_HIGHER_ADDR (volatile int *)0x0400002C
+pub const TIMER_LOWER_ADDR: u32 = 0x4000020;
+pub const TIMER_HIGHER_ADDR: u32 = 0x400003f;
 
 #[derive(Clone)]
 pub struct Timer {
-    state: u32,
     period: u32,
     running: bool,
     time_out: bool,
@@ -31,7 +26,6 @@ impl Timer {
     /// Returns a new Memory object with a given size all set to 0
     pub fn new() -> Self {
         Timer {
-            state: 0,
             period: 0,
             running: false,
             time_out: true,
@@ -52,10 +46,23 @@ impl Timer {
         }
 
         self.period_duration =
-            Duration::from_nanos(((self.period as u64) * 1_000_000_000) / CLOCK_FEQ as u64);
+            Duration::from_nanos(((self.period as u64) * 1_000_000_000) / cpu::CLOCK_FEQ as u64);
     }
 
     pub fn clock(&mut self) {
+    }
+
+    pub fn should_interrupt(&self) -> bool {
+        self.time_out && self.irq
+    }
+}
+
+impl io::Device<()> for Timer {
+    fn addr_range(&self) -> (u32, u32) {
+        (TIMER_LOWER_ADDR, TIMER_HIGHER_ADDR)
+    }
+
+    fn clock(&mut self) {
         if self.running {
             let elapsed = self.clock_start.elapsed();
             if elapsed >= self.period_duration {
@@ -64,14 +71,21 @@ impl Timer {
             }
         }
     }
+}
 
-    pub fn should_interrupt(&self) -> bool {
-        self.time_out && self.irq
+impl io::Interruptable for Timer {
+    fn interrupt(&self) -> Option<u32> {
+        if self.should_interrupt() {
+            Some(exception::TIMER_INTERRUPT)
+        } else {
+            None
+        }
     }
 }
 
 impl Data<()> for Timer {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
+        let addr = addr - TIMER_LOWER_ADDR;
         let part = addr / 4;
         let i = addr % 4;
 
@@ -115,6 +129,7 @@ impl Data<()> for Timer {
     }
 
     fn store_byte(&mut self, addr: u32, byte: u8) -> Result<(), ()> {
+        let addr = addr - TIMER_LOWER_ADDR;
         let part = addr / 4;
         let i = addr % 4;
 

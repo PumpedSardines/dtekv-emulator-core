@@ -1,38 +1,45 @@
 use crate::{
-    cpu::{csr, Bus, Csr, Regs},
+    cpu::{self, Bus, Csr, Regs},
     exception,
     instruction::Instruction,
     Data,
 };
 
 // TODO: Implement different instruction speed depending on IO device
-const STORE_CYCLE: u32 = 40;
-const LOAD_CYCLE: u32 = 40;
+pub const CLOCK_FEQ: u32 = 30_000_000;
+pub const STORE_CYCLE: u32 = 40;
+pub const LOAD_CYCLE: u32 = 40;
 
 #[derive(Debug)]
-pub struct Cpu {
-    pub bus: Bus,
+pub struct Cpu<T: Data<()>> {
+    pub bus: T,
     pub regs: Regs,
     pub csr: Csr,
     pub pc: u32,
-    pub wait_cycles_emulation: bool,
     pub wait_cycles: u32,
 }
 
-impl Cpu {
-    pub fn new() -> Cpu {
+impl<'a> Cpu<Bus<'a>> {
+    pub fn new() -> Cpu<Bus<'a>> {
         Cpu {
             bus: Bus::new(),
             regs: Regs::new(),
             csr: Csr::new(),
             pc: 0,
-            wait_cycles_emulation: false,
             wait_cycles: 0,
         }
     }
+}
 
-    pub fn enable_wait_cycles(&mut self) {
-        self.wait_cycles_emulation = true;
+impl<T: Data<()>> Cpu<T> {
+    pub fn new_with_bus(bus: T) -> Cpu<T> {
+        Cpu {
+            bus,
+            regs: Regs::new(),
+            csr: Csr::new(),
+            pc: 0,
+            wait_cycles: 0,
+        }
     }
 
     pub fn reset(&mut self) {
@@ -400,7 +407,6 @@ impl Cpu {
         // self.csr.write(imm, uimm as u32);
         // self.regs.set(rd, value);
         // self.pc += 4;
-        Ok(())
     }
 
     fn csrrsi(&mut self, uimm: u8, imm: u32, rd: u8) -> Result<(), ()> {
@@ -420,11 +426,10 @@ impl Cpu {
         // self.csr.write(imm, self.csr.read(imm) & !(uimm as u32));
         // self.regs.set(rd, value);
         // self.pc += 4;
-        Ok(())
     }
 
     fn mret(&mut self) -> Result<(), ()> {
-        self.pc = self.csr.load(csr::MEPC);
+        self.pc = self.csr.load(cpu::MEPC);
         self.csr.set_mstatus_mie(self.csr.get_mstatus_mpie());
         self.csr.set_mstatus_mpie(true);
         Ok(())
@@ -609,21 +614,21 @@ impl Cpu {
 
         let exception_pc = self.pc.wrapping_sub(4);
         self.pc = 0;
-        self.csr.store(csr::MEPC, exception_pc);
-        self.csr.store(csr::MCAUSE, cause);
+        self.csr.store(cpu::MEPC, exception_pc);
+        self.csr.store(cpu::MCAUSE, cause);
         self.csr.set_mstatus_mpie(self.csr.get_mstatus_mie());
         self.csr.set_mstatus_mie(false);
 
         if cause & 0x80000000 != 0 {
             // When it's an external interrupt, we need to increment the MEPC by 4
-            let exception_pc = self.csr.load(csr::MEPC);
+            let exception_pc = self.csr.load(cpu::MEPC);
             let exception_pc = exception_pc.wrapping_add(4);
-            self.csr.store(csr::MEPC, exception_pc);
+            self.csr.store(cpu::MEPC, exception_pc);
         }
     }
 
     pub fn external_interrupt(&mut self, cause: u32) {
-        if self.csr.load(csr::MIE) & (1 << cause) == 0 {
+        if self.csr.load(cpu::MIE) & (1 << cause) == 0 {
             // This interrupt is disabled
             return;
         }
@@ -633,10 +638,13 @@ impl Cpu {
     }
 
     pub fn add_wait_cycles(&mut self, cycles: u32) {
-        if !self.wait_cycles_emulation {
-            return;
+        if !cfg!(debug_assertions) {
+            self.wait_cycles += cycles;
+        } else {
+            // In debug mode, the wait cycles are just slowing the emulator down unnecessarily
+            // We don't want realism in debug mode, we just want to test that everything works
+            self.wait_cycles += 0;
         }
-        self.wait_cycles += cycles;
     }
 
     pub fn clock(&mut self) {
@@ -651,13 +659,21 @@ impl Cpu {
                     self.interrupt(instr.unwrap_err());
                 }
             }
-            _ => self.wait_cycles -= 1,
+            _ => {
+                if !cfg!(debug_assertions) {
+                    self.wait_cycles -= 1;
+                } else {
+                    unreachable!("This should never happen since we don't increment the wait cycles in debug mode");
+                }
+            }
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::io;
+
     use super::*;
 
     #[test]
@@ -1076,7 +1092,9 @@ mod tests {
 
     #[test]
     fn test_load_and_save() {
-        let mut cpu = Cpu::new();
+        let sdram = io::SDRam::new();
+        let mut cpu = Cpu::new_with_bus(sdram);
+
 
         cpu.exec_instruction(0x361880b7.try_into().unwrap())
             .unwrap(); // lui x1, 0x36188

@@ -1,4 +1,4 @@
-use crate::{utils, Data};
+use crate::{utils, Data, io, exception};
 
 #[derive(Clone)]
 pub struct Switch {
@@ -6,6 +6,9 @@ pub struct Switch {
     interrupt_mask: u32,
     edge_cap: u32,
 }
+
+pub const SWITCH_LOWER_ADDR: u32 = 0x04000010;
+pub const SWITCH_HIGHER_ADDR: u32 = 0x400001f;
 
 impl Switch {
     /// Returns a new Memory object with a given size all set to 0
@@ -30,14 +33,32 @@ impl Switch {
     pub fn get(&self, index: u32) -> bool {
         (self.state & (1 << index)) != 0
     }
+}
 
-    pub fn should_interrupt(&self) -> bool {
-        (self.edge_cap & self.interrupt_mask) != 0
+impl io::Device<()> for Switch {
+    fn addr_range(&self) -> (u32, u32) {
+        (SWITCH_LOWER_ADDR, SWITCH_HIGHER_ADDR)
+    }
+
+    fn clock(&mut self) {}
+}
+
+impl io::Interruptable for Switch {
+    fn interrupt(&self) -> Option<u32> {
+        let interrupt_condition = (self.edge_cap & self.interrupt_mask) != 0;
+
+        if interrupt_condition {
+            Some(exception::SWITCH_INTERRUPT)
+        } else {
+            None
+        }
     }
 }
 
 impl Data<()> for Switch {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
+        let addr = addr - SWITCH_LOWER_ADDR;
+
         // TODO: Edge capture
         Ok(match addr {
             0 => (self.state & 0xFF) as u8,
@@ -47,6 +68,8 @@ impl Data<()> for Switch {
     }
 
     fn store_byte(&mut self, addr: u32, byte: u8) -> Result<(), ()> {
+        let addr = addr - SWITCH_LOWER_ADDR;
+
         let part = addr / 4;
         // Do nothing, hardwired to nothing
         match part {

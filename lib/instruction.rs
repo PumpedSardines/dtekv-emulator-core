@@ -128,7 +128,6 @@ const REM: u8 = 0b110;
 const REMU: u8 = 0b111;
 
 const MRET: u32 = 0x30200073;
-const SRET: u32 = 0x10200073;
 const ECALL: u32 = 0x00000073;
 
 const FUNCT7_SLLI: u8 = 0b0000000;

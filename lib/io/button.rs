@@ -1,4 +1,4 @@
-use crate::{utils, Data};
+use crate::{exception, io, utils, Data};
 
 #[derive(Clone)]
 pub struct Button {
@@ -6,6 +6,9 @@ pub struct Button {
     interrupt_mask: u32,
     edge_cap: u32,
 }
+
+pub const BUTTON_LOWER_ADDR: u32 = 0x040000d0;
+pub const BUTTON_HIGHER_ADDR: u32 = 0x040000df;
 
 impl Button {
     /// Returns a new Memory object with a given size all set to 0
@@ -15,6 +18,10 @@ impl Button {
             interrupt_mask: 0,
             edge_cap: 0,
         }
+    }
+
+    pub const fn bounds() -> [(u32, u32); 1] {
+        [(BUTTON_LOWER_ADDR, BUTTON_HIGHER_ADDR)]
     }
 
     pub fn set(&mut self, pressed: bool) {
@@ -31,8 +38,28 @@ impl Button {
     }
 }
 
+impl io::Device<()> for Button {
+    fn addr_range(&self) -> (u32, u32) {
+        (BUTTON_LOWER_ADDR, BUTTON_HIGHER_ADDR)
+    }
+
+    fn clock(&mut self) {
+    }
+}
+
+impl io::Interruptable for Button {
+    fn interrupt(&self) -> Option<u32> {
+        if self.should_interrupt() {
+            Some(exception::BUTTON_INTERRUPT)
+        } else {
+            None
+        }
+    }
+}
+
 impl Data<()> for Button {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
+        let addr = addr - BUTTON_LOWER_ADDR;
         Ok(if addr == 0 {
             match self.pressed {
                 true => 1,
@@ -45,6 +72,7 @@ impl Data<()> for Button {
     }
 
     fn store_byte(&mut self, addr: u32, byte: u8) -> Result<(), ()> {
+        let addr = addr - BUTTON_LOWER_ADDR;
         let part = addr / 4;
         // Hard wired to nothing
         match part {
