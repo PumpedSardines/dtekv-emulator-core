@@ -654,7 +654,7 @@ impl<T: Data<()>> Cpu<T> {
 
                 if let Ok(instr) = instr {
                     self.exec_instruction(instr)
-                        .expect(&format!("In the future exec_instruction shouldn't return an error, instruction: {:?}", instr));
+                        .expect(&format!("In the future exec_instruction shouldn't return an error, instruction: {:?}, regs: {:?}", instr, self.regs));
                 } else {
                     self.interrupt(instr.unwrap_err());
                 }
@@ -1094,7 +1094,6 @@ mod tests {
     fn test_load_and_save() {
         let sdram = io::SDRam::new();
         let mut cpu = Cpu::new_with_bus(sdram);
-
 
         cpu.exec_instruction(0x361880b7.try_into().unwrap())
             .unwrap(); // lui x1, 0x36188
