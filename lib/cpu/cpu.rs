@@ -653,8 +653,15 @@ impl<T: Data<()>> Cpu<T> {
                 let instr: Result<Instruction, u32> = self.fetch_instruction();
 
                 if let Ok(instr) = instr {
-                    self.exec_instruction(instr)
-                        .expect(&format!("In the future exec_instruction shouldn't return an error, instruction: {:?}, regs: {:?}", instr, self.regs));
+                    let res = self.exec_instruction(instr);
+
+                    if cfg!(debug_assertions) {
+                        res.unwrap_or_else(|_| {
+                           panic!("In the future exec_instruction shouldn't return an error, instruction: {:?}, regs: {:?}, pc: {}", instr, self.regs, self.pc)
+                       });
+                    } else {
+                        res.unwrap();
+                    }
                 } else {
                     self.interrupt(instr.unwrap_err());
                 }
