@@ -654,7 +654,7 @@ impl<T: Data<()>> Cpu<T> {
 
                 if let Ok(instr) = instr {
                     self.exec_instruction(instr)
-                        .expect("In the future exec_instruction shouldn't return an error");
+                        .expect(&format!("In the future exec_instruction shouldn't return an error, instruction: {:?}", instr));
                 } else {
                     self.interrupt(instr.unwrap_err());
                 }
