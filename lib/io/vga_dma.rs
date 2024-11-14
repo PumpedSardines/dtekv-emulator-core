@@ -1,7 +1,7 @@
 use crate::{io, Data};
 
-pub const VGA_DMA_LOWER_ADDR: u32 = 0x08000000;
-pub const VGA_DMA_HIGHER_ADDR: u32 = 0x80257ff;
+pub const VGA_DMA_LOWER_ADDR: u32 = 0x4000100;
+pub const VGA_DMA_HIGHER_ADDR: u32 = 0x400010f;
 
 pub struct VgaDma {}
 
