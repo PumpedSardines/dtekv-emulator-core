@@ -1,4 +1,4 @@
-use crate::{utils, Data, io, exception};
+use crate::{exception, io, utils, Data};
 
 #[derive(Clone)]
 pub struct Switch {
@@ -77,11 +77,11 @@ impl Data<()> for Switch {
             1 => {} // Direction address, can store here, but changes nothing
             2 => {
                 // Interrupt mask
- self.interrupt_mask =               utils::set_in_u32(self.interrupt_mask, byte, addr);
+                self.interrupt_mask = utils::set_in_u32(self.interrupt_mask, byte, addr);
             }
             3 => {
                 // Edge capture
- self.edge_cap =               utils::set_in_u32(self.edge_cap, byte, addr);
+                self.edge_cap = utils::set_in_u32(self.edge_cap, byte, addr);
             }
             _ => unreachable!("The switch address space is only 4 words long, if this error happens, update the bus module"),
         };

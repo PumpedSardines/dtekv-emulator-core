@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{Data, io::Device};
+use crate::{Data, io::{self, Device}};
 
 #[derive(Debug)]
 pub struct Bus {
@@ -24,18 +24,6 @@ impl Bus {
         self.devices.push(device);
     }
 
-    /// If an interrupt signal is pending, returns the cause
-    pub fn should_interrupt(&self) -> Option<u32> {
-        for device in &self.devices {
-            let device = device.borrow();
-            if let Some(cause) = device.interrupt() {
-                return Some(cause);
-            }
-        }
-
-        None
-    }
-
     pub fn load_at<K: Into<u8>, T: IntoIterator<Item = K>>(&mut self, offset: u32, bin: T)  {
         for (i, byte) in bin.into_iter().enumerate() {
             self.store_byte(offset + i as u32, byte.into()).unwrap();
@@ -48,6 +36,32 @@ impl Bus {
             let mut device = device.borrow_mut();
             device.clock();
         }
+    }
+}
+
+impl io::Device<()> for Bus {
+    fn addr_range(&self) -> (u32, u32) {
+        (0, 0xFFFF_FFFF)
+    }
+
+    fn clock(&mut self) {
+        for device in &mut self.devices {
+            let mut device = device.borrow_mut();
+            device.clock();
+        }
+    }
+}
+
+impl io::Interruptable for Bus {
+    fn interrupt(&self) -> Option<u32> {
+        for device in &self.devices {
+            let device = device.borrow();
+            if let Some(cause) = device.interrupt() {
+                return Some(cause);
+            }
+        }
+
+        None
     }
 }
 

@@ -1,5 +1,5 @@
 /// Test larger programs using the emulator to ensure the CPU is working correctly
-use dtekv_emulator::*;
+use dtekv_emulator_core::*;
 
 #[test]
 fn test_factorial_riscv_program() {

@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "dtekv_emulator"
+name = "dtekv_emulator_core"
 version = "0.1.0"

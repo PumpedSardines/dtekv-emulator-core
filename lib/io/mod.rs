@@ -22,5 +22,8 @@ pub use timer::*;
 mod uart;
 pub use uart::*;
 
-mod vga;
-pub use vga::*;
+mod vga_buffer;
+pub use vga_buffer::*;
+
+mod vga_dma;
+pub use vga_dma::*;
