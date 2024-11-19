@@ -30,13 +30,6 @@ impl Bus {
             self.store_byte(offset + i as u32, byte.into()).unwrap();
         }
     }
-
-    pub fn clock(&mut self) {
-        for device in &mut self.devices {
-            let mut device = device.borrow_mut();
-            device.clock();
-        }
-    }
 }
 
 impl io::Device<()> for Bus {

@@ -45,6 +45,10 @@ impl VgaDma {
             is_swapping: false,
         }
     }
+
+    pub fn get_buffer(&self) -> u32 {
+        self.buffer
+    }
 }
 
 impl io::Device<()> for VgaDma {
