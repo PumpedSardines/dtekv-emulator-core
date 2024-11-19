@@ -51,32 +51,28 @@ impl<T: Data<()>> Cpu<T> {
         self.csr.set_mstatus_mie(true);
     }
 
-    fn lui(&mut self, imm: u32, rd: u8) -> Result<(), ()> {
+    fn lui(&mut self, imm: u32, rd: u8) {
         self.regs.set(rd, imm);
         self.pc += 4;
-        Ok(())
     }
 
-    fn auipc(&mut self, imm: u32, rd: u8) -> Result<(), ()> {
+    fn auipc(&mut self, imm: u32, rd: u8) {
         self.regs.set(rd, self.pc.wrapping_add(imm));
         self.pc += 4;
-        Ok(())
     }
 
-    fn jal(&mut self, imm: u32, rd: u8) -> Result<(), ()> {
+    fn jal(&mut self, imm: u32, rd: u8) {
         self.regs.set(rd, self.pc + 4);
         self.pc = self.pc.wrapping_add(imm);
-        Ok(())
     }
 
-    fn jalr(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+    fn jalr(&mut self, rs1: u8, imm: u32, rd: u8) {
         let rs1 = self.regs.get(rs1);
         self.regs.set(rd, self.pc + 4);
         self.pc = rs1.wrapping_add(imm);
-        Ok(())
     }
 
-    fn beq(&mut self, rs1: u8, rs2: u8, imm: u32) -> Result<(), ()> {
+    fn beq(&mut self, rs1: u8, rs2: u8, imm: u32) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         if rs1 == rs2 {
@@ -84,10 +80,9 @@ impl<T: Data<()>> Cpu<T> {
         } else {
             self.pc += 4;
         }
-        Ok(())
     }
 
-    fn bne(&mut self, rs1: u8, rs2: u8, imm: u32) -> Result<(), ()> {
+    fn bne(&mut self, rs1: u8, rs2: u8, imm: u32) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         if rs1 != rs2 {
@@ -95,10 +90,9 @@ impl<T: Data<()>> Cpu<T> {
         } else {
             self.pc += 4;
         }
-        Ok(())
     }
 
-    fn blt(&mut self, rs1: u8, rs2: u8, imm: u32) -> Result<(), ()> {
+    fn blt(&mut self, rs1: u8, rs2: u8, imm: u32) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         if (rs1 as i32) < (rs2 as i32) {
@@ -106,10 +100,9 @@ impl<T: Data<()>> Cpu<T> {
         } else {
             self.pc += 4;
         }
-        Ok(())
     }
 
-    fn bge(&mut self, rs1: u8, rs2: u8, imm: u32) -> Result<(), ()> {
+    fn bge(&mut self, rs1: u8, rs2: u8, imm: u32) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         if (rs1 as i32) >= (rs2 as i32) {
@@ -117,10 +110,9 @@ impl<T: Data<()>> Cpu<T> {
         } else {
             self.pc += 4;
         }
-        Ok(())
     }
 
-    fn bltu(&mut self, rs1: u8, rs2: u8, imm: u32) -> Result<(), ()> {
+    fn bltu(&mut self, rs1: u8, rs2: u8, imm: u32) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         if rs1 < rs2 {
@@ -128,10 +120,9 @@ impl<T: Data<()>> Cpu<T> {
         } else {
             self.pc += 4;
         }
-        Ok(())
     }
 
-    fn bgeu(&mut self, rs1: u8, rs2: u8, imm: u32) -> Result<(), ()> {
+    fn bgeu(&mut self, rs1: u8, rs2: u8, imm: u32) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         if rs1 >= rs2 {
@@ -139,268 +130,245 @@ impl<T: Data<()>> Cpu<T> {
         } else {
             self.pc += 4;
         }
-        Ok(())
     }
 
-    fn lb(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+    fn lb(&mut self, rs1: u8, imm: u32, rd: u8) {
         self.add_wait_cycles(LOAD_CYCLE);
 
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
-        let byte = self.bus.load_byte(addr)?;
-        self.regs.set(rd, byte as i8 as i32 as u32);
+        let byte = self
+            .bus
+            .load_byte(addr)
+            .map(|byte| byte as i8 as i32 as u32)
+            .unwrap_or(0xDE);
+        self.regs.set(rd, byte);
         self.pc += 4;
-        Ok(())
     }
 
-    fn lh(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+    fn lh(&mut self, rs1: u8, imm: u32, rd: u8) {
         self.add_wait_cycles(LOAD_CYCLE);
 
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
-        let halfword = self.bus.load_halfword(addr)?;
-        self.regs.set(rd, halfword as i16 as i32 as u32);
+        let halfword = self
+            .bus
+            .load_halfword(addr)
+            .map(|halfword| halfword as i16 as i32 as u32)
+            .unwrap_or(0xDEAD);
+        self.regs.set(rd, halfword);
         self.pc += 4;
-        Ok(())
     }
 
-    fn lw(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+    fn lw(&mut self, rs1: u8, imm: u32, rd: u8) {
         self.add_wait_cycles(LOAD_CYCLE);
 
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
-        let word = self.bus.load_word(addr)?;
+        let word = self.bus.load_word(addr).unwrap_or(0xDEAD_BEEF);
         self.regs.set(rd, word);
         self.pc += 4;
-        Ok(())
     }
 
-    fn lbu(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+    fn lbu(&mut self, rs1: u8, imm: u32, rd: u8) {
         self.add_wait_cycles(LOAD_CYCLE);
 
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
-        let byte = self.bus.load_byte(addr)?;
+        let byte = self.bus.load_byte(addr).unwrap_or(0xDE);
         self.regs.set(rd, byte as u32);
         self.pc += 4;
-        Ok(())
     }
 
-    fn lhu(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+    fn lhu(&mut self, rs1: u8, imm: u32, rd: u8) {
         self.add_wait_cycles(LOAD_CYCLE);
 
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
-        let halfword = self.bus.load_halfword(addr)?;
+        let halfword = self.bus.load_halfword(addr).unwrap_or(0xDEAD);
         self.regs.set(rd, halfword as u32);
         self.pc += 4;
-        Ok(())
     }
 
-    fn sb(&mut self, rs1: u8, rs2: u8, imm: u32) -> Result<(), ()> {
+    fn sb(&mut self, rs1: u8, rs2: u8, imm: u32) {
         self.add_wait_cycles(STORE_CYCLE);
 
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
-        self.bus.store_byte(addr, rs2 as u8)?;
+        let _ = self.bus.store_byte(addr, rs2 as u8);
         self.pc += 4;
-        Ok(())
     }
 
-    fn sh(&mut self, rs1: u8, rs2: u8, imm: u32) -> Result<(), ()> {
+    fn sh(&mut self, rs1: u8, rs2: u8, imm: u32) {
         self.add_wait_cycles(STORE_CYCLE);
 
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
-        self.bus.store_halfword(addr, rs2 as u16)?;
+        let _ = self.bus.store_halfword(addr, rs2 as u16);
         self.pc += 4;
-        Ok(())
     }
 
-    fn sw(&mut self, rs1: u8, rs2: u8, imm: u32) -> Result<(), ()> {
+    fn sw(&mut self, rs1: u8, rs2: u8, imm: u32) {
         self.add_wait_cycles(STORE_CYCLE);
 
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
-        self.bus.store_word(addr, rs2)?;
+        let _ = self.bus.store_word(addr, rs2);
         self.pc += 4;
-        Ok(())
     }
 
-    fn addi(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+    fn addi(&mut self, rs1: u8, imm: u32, rd: u8) {
         let rs1 = self.regs.get(rs1);
         self.regs.set(rd, rs1.wrapping_add(imm));
         self.pc += 4;
-        Ok(())
     }
 
-    fn andi(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+    fn andi(&mut self, rs1: u8, imm: u32, rd: u8) {
         let rs1 = self.regs.get(rs1);
         self.regs.set(rd, rs1 & imm);
         self.pc += 4;
-        Ok(())
     }
 
-    fn ori(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+    fn ori(&mut self, rs1: u8, imm: u32, rd: u8) {
         let rs1 = self.regs.get(rs1);
         self.regs.set(rd, rs1 | imm);
         self.pc += 4;
-        Ok(())
     }
 
-    fn xori(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+    fn xori(&mut self, rs1: u8, imm: u32, rd: u8) {
         let rs1 = self.regs.get(rs1);
         self.regs.set(rd, rs1 ^ imm);
         self.pc += 4;
-        Ok(())
     }
 
-    fn slli(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+    fn slli(&mut self, rs1: u8, imm: u32, rd: u8) {
         let rs1 = self.regs.get(rs1);
         self.regs.set(rd, rs1.wrapping_shl(imm));
         self.pc += 4;
-        Ok(())
     }
 
-    fn srli(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+    fn srli(&mut self, rs1: u8, imm: u32, rd: u8) {
         let rs1 = self.regs.get(rs1);
         self.regs.set(rd, rs1.wrapping_shr(imm));
         self.pc += 4;
-        Ok(())
     }
 
-    fn srai(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+    fn srai(&mut self, rs1: u8, imm: u32, rd: u8) {
         let rs1 = self.regs.get(rs1);
         self.regs.set(rd, (rs1 as i32).wrapping_shr(imm) as u32);
         self.pc += 4;
-        Ok(())
     }
 
-    fn slti(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+    fn slti(&mut self, rs1: u8, imm: u32, rd: u8) {
         let rs1 = self.regs.get(rs1);
         self.regs
             .set(rd, if (rs1 as i32) < (imm as i32) { 1 } else { 0 });
         self.pc += 4;
-        Ok(())
     }
 
-    fn sltiu(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+    fn sltiu(&mut self, rs1: u8, imm: u32, rd: u8) {
         let rs1 = self.regs.get(rs1);
         self.regs.set(rd, if rs1 < imm { 1 } else { 0 });
         self.pc += 4;
-        Ok(())
     }
 
-    fn add(&mut self, rs1: u8, rs2: u8, rd: u8) -> Result<(), ()> {
+    fn add(&mut self, rs1: u8, rs2: u8, rd: u8) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         self.regs.set(rd, rs1.wrapping_add(rs2));
         self.pc += 4;
-        Ok(())
     }
 
-    fn sub(&mut self, rs1: u8, rs2: u8, rd: u8) -> Result<(), ()> {
+    fn sub(&mut self, rs1: u8, rs2: u8, rd: u8) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         self.regs.set(rd, rs1.wrapping_sub(rs2));
         self.pc += 4;
-        Ok(())
     }
 
-    fn slt(&mut self, rs1: u8, rs2: u8, rd: u8) -> Result<(), ()> {
+    fn slt(&mut self, rs1: u8, rs2: u8, rd: u8) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         self.regs
             .set(rd, if (rs1 as i32) < (rs2 as i32) { 1 } else { 0 });
         self.pc += 4;
-        Ok(())
     }
 
-    fn sltu(&mut self, rs1: u8, rs2: u8, rd: u8) -> Result<(), ()> {
+    fn sltu(&mut self, rs1: u8, rs2: u8, rd: u8) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         self.regs.set(rd, if rs1 < rs2 { 1 } else { 0 });
         self.pc += 4;
-        Ok(())
     }
 
-    fn sll(&mut self, rs1: u8, rs2: u8, rd: u8) -> Result<(), ()> {
+    fn sll(&mut self, rs1: u8, rs2: u8, rd: u8) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2) & 0x1f;
         self.regs.set(rd, rs1.wrapping_shl(rs2));
         self.pc += 4;
-        Ok(())
     }
 
-    fn srl(&mut self, rs1: u8, rs2: u8, rd: u8) -> Result<(), ()> {
+    fn srl(&mut self, rs1: u8, rs2: u8, rd: u8) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2) & 0x1f;
         self.regs.set(rd, rs1.wrapping_shr(rs2));
         self.pc += 4;
-        Ok(())
     }
 
-    fn sra(&mut self, rs1: u8, rs2: u8, rd: u8) -> Result<(), ()> {
+    fn sra(&mut self, rs1: u8, rs2: u8, rd: u8) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2) & 0x1f;
         self.regs.set(rd, (rs1 as i32).wrapping_shr(rs2) as u32);
         self.pc += 4;
-        Ok(())
     }
 
-    fn and(&mut self, rs1: u8, rs2: u8, rd: u8) -> Result<(), ()> {
+    fn and(&mut self, rs1: u8, rs2: u8, rd: u8) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         self.regs.set(rd, rs1 & rs2);
         self.pc += 4;
-        Ok(())
     }
 
-    fn or(&mut self, rs1: u8, rs2: u8, rd: u8) -> Result<(), ()> {
+    fn or(&mut self, rs1: u8, rs2: u8, rd: u8) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         self.regs.set(rd, rs1 | rs2);
         self.pc += 4;
-        Ok(())
     }
 
-    fn xor(&mut self, rs1: u8, rs2: u8, rd: u8) -> Result<(), ()> {
+    fn xor(&mut self, rs1: u8, rs2: u8, rd: u8) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         self.regs.set(rd, rs1 ^ rs2);
         self.pc += 4;
-        Ok(())
     }
 
-    fn csrrw(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+    fn csrrw(&mut self, rs1: u8, imm: u32, rd: u8) {
         let value = self.csr.load(imm);
         self.csr.store(imm, self.regs.get(rs1));
         self.regs.set(rd, value);
         self.pc += 4;
-        Ok(())
     }
 
-    fn csrrs(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+    fn csrrs(&mut self, rs1: u8, imm: u32, rd: u8) {
         let value = self.csr.load(imm);
         self.csr.store(imm, self.csr.load(imm) | self.regs.get(rs1));
         self.regs.set(rd, value);
         self.pc += 4;
-        Ok(())
     }
 
-    fn csrrc(&mut self, rs1: u8, imm: u32, rd: u8) -> Result<(), ()> {
+    fn csrrc(&mut self, rs1: u8, imm: u32, rd: u8) {
         let value = self.csr.load(imm);
         self.csr
             .store(imm, self.csr.load(imm) & !self.regs.get(rs1));
         self.regs.set(rd, value);
         self.pc += 4;
-        Ok(())
     }
 
-    fn csrrwi(&mut self, _uimm: u8, _imm: u32, _rd: u8) -> Result<(), ()> {
+    fn csrrwi(&mut self, _uimm: u8, _imm: u32, _rd: u8) {
         // WARNING: Need to research what the dtekv chip does when running into this instruction
         panic!("csrrwi not implemented");
         // let value = self.csr.read(imm);
@@ -409,17 +377,16 @@ impl<T: Data<()>> Cpu<T> {
         // self.pc += 4;
     }
 
-    fn csrrsi(&mut self, uimm: u8, imm: u32, rd: u8) -> Result<(), ()> {
+    fn csrrsi(&mut self, uimm: u8, imm: u32, rd: u8) {
         let value = self.csr.load(imm);
         // NOTE: Dtekv differs from risc-v here:
         self.csr
             .store(imm, self.csr.load(imm) | (1 << (uimm as u32)));
         self.regs.set(rd, value);
         self.pc += 4;
-        Ok(())
     }
 
-    fn csrrci(&mut self, _uimm: u8, _imm: u32, _rd: u8) -> Result<(), ()> {
+    fn csrrci(&mut self, _uimm: u8, _imm: u32, _rd: u8) {
         // WARNING: Need to research what the dtekv chip does when running into this instruction
         panic!("csrrci not implemented");
         // let value = self.csr.read(imm);
@@ -428,55 +395,49 @@ impl<T: Data<()>> Cpu<T> {
         // self.pc += 4;
     }
 
-    fn mret(&mut self) -> Result<(), ()> {
+    fn mret(&mut self) {
         self.pc = self.csr.load(cpu::MEPC);
         self.csr.set_mstatus_mie(self.csr.get_mstatus_mpie());
         self.csr.set_mstatus_mpie(true);
-        Ok(())
     }
 
-    fn ecall(&mut self) -> Result<(), ()> {
+    fn ecall(&mut self) {
         self.pc += 4;
         self.interrupt(exception::ENVIRONMENT_CALL_FROM_M_MODE);
-        Ok(())
     }
 
-    fn mul(&mut self, rs1: u8, rs2: u8, rd: u8) -> Result<(), ()> {
+    fn mul(&mut self, rs1: u8, rs2: u8, rd: u8) {
         let rs1 = self.regs.get(rs1) as i32 as i64;
         let rs2 = self.regs.get(rs2) as i32 as i64;
         self.regs.set(rd, rs1.wrapping_mul(rs2) as u32);
         self.pc += 4;
-        Ok(())
     }
 
-    fn mulh(&mut self, rs1: u8, rs2: u8, rd: u8) -> Result<(), ()> {
+    fn mulh(&mut self, rs1: u8, rs2: u8, rd: u8) {
         let rs1 = self.regs.get(rs1) as i32 as i64;
         let rs2 = self.regs.get(rs2) as i32 as i64;
         let result = rs1.wrapping_mul(rs2);
         self.regs.set(rd, (result >> 32) as u32);
         self.pc += 4;
-        Ok(())
     }
 
-    fn mulhu(&mut self, rs1: u8, rs2: u8, rd: u8) -> Result<(), ()> {
+    fn mulhu(&mut self, rs1: u8, rs2: u8, rd: u8) {
         let rs1 = self.regs.get(rs1) as u32 as u64;
         let rs2 = self.regs.get(rs2) as u32 as u64;
         let result = rs1.wrapping_mul(rs2);
         self.regs.set(rd, (result >> 32) as u32);
         self.pc += 4;
-        Ok(())
     }
 
-    fn mulhsu(&mut self, rs1: u8, rs2: u8, rd: u8) -> Result<(), ()> {
+    fn mulhsu(&mut self, rs1: u8, rs2: u8, rd: u8) {
         let rs1 = self.regs.get(rs1) as i32 as i64;
         let rs2 = self.regs.get(rs2) as u32 as i64;
         let result = rs1.wrapping_mul(rs2);
         self.regs.set(rd, (result >> 32) as u32);
         self.pc += 4;
-        Ok(())
     }
 
-    fn div(&mut self, rs1: u8, rs2: u8, rd: u8) -> Result<(), ()> {
+    fn div(&mut self, rs1: u8, rs2: u8, rd: u8) {
         let rs1 = self.regs.get(rs1) as i32;
         let rs2 = self.regs.get(rs2) as i32;
         if rs2 == 0 {
@@ -489,10 +450,9 @@ impl<T: Data<()>> Cpu<T> {
             }
         }
         self.pc += 4;
-        Ok(())
     }
 
-    fn divu(&mut self, rs1: u8, rs2: u8, rd: u8) -> Result<(), ()> {
+    fn divu(&mut self, rs1: u8, rs2: u8, rd: u8) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         if rs2 == 0 {
@@ -501,10 +461,9 @@ impl<T: Data<()>> Cpu<T> {
             self.regs.set(rd, rs1 / rs2);
         }
         self.pc += 4;
-        Ok(())
     }
 
-    fn rem(&mut self, rs1: u8, rs2: u8, rd: u8) -> Result<(), ()> {
+    fn rem(&mut self, rs1: u8, rs2: u8, rd: u8) {
         let rs1 = self.regs.get(rs1) as i32;
         let rs2 = self.regs.get(rs2) as i32;
         if rs2 == 0 {
@@ -517,10 +476,9 @@ impl<T: Data<()>> Cpu<T> {
             }
         }
         self.pc += 4;
-        Ok(())
     }
 
-    fn remu(&mut self, rs1: u8, rs2: u8, rd: u8) -> Result<(), ()> {
+    fn remu(&mut self, rs1: u8, rs2: u8, rd: u8) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         if rs2 == 0 {
@@ -529,7 +487,6 @@ impl<T: Data<()>> Cpu<T> {
             self.regs.set(rd, rs1 % rs2);
         }
         self.pc += 4;
-        Ok(())
     }
 
     fn fetch_instruction(&self) -> Result<Instruction, u32> {
@@ -538,15 +495,12 @@ impl<T: Data<()>> Cpu<T> {
         }
         self.bus
             .load_word(self.pc)
-            .unwrap_or_else(|_| {
-                // TODO: Check what happens if this happens
-                panic!("Instruction fetch failed")
-            })
+            .unwrap_or(exception::ILLEGAL_INSTRUCTION)
             .try_into()
             .map_err(|_| exception::ILLEGAL_INSTRUCTION)
     }
 
-    fn exec_instruction(&mut self, instruction: Instruction) -> Result<(), ()> {
+    fn exec_instruction(&mut self, instruction: Instruction) {
         use Instruction as I;
 
         match instruction {
@@ -653,15 +607,7 @@ impl<T: Data<()>> Cpu<T> {
                 let instr: Result<Instruction, u32> = self.fetch_instruction();
 
                 if let Ok(instr) = instr {
-                    let res = self.exec_instruction(instr);
-
-                    if cfg!(debug_assertions) {
-                        res.unwrap_or_else(|_| {
-                           panic!("In the future exec_instruction shouldn't return an error, instruction: {:?}, regs: {:?}, pc: {}", instr, self.regs, self.pc)
-                       });
-                    } else {
-                        res.unwrap();
-                    }
+                    self.exec_instruction(instr);
                 } else {
                     self.interrupt(instr.unwrap_err());
                 }
@@ -694,8 +640,7 @@ mod tests {
         cpu.exec_instruction(Instruction::LUI {
             imm: 0x12345,
             rd: 1,
-        })
-        .unwrap();
+        });
         assert_eq!(cpu.regs.get(1), 0x12345);
         assert_eq!(cpu.pc, 4);
     }
@@ -708,8 +653,7 @@ mod tests {
         cpu.exec_instruction(Instruction::AUIPC {
             imm: 0x3000000,
             rd: 1,
-        })
-        .unwrap();
+        });
         assert_eq!(cpu.regs.get(1), 0x43000000);
         assert_eq!(cpu.pc, 0x40000004);
     }
@@ -719,8 +663,7 @@ mod tests {
         let mut cpu = Cpu::new();
 
         cpu.pc = 0x40000000;
-        cpu.exec_instruction(Instruction::JAL { imm: 0x1000, rd: 1 })
-            .unwrap();
+        cpu.exec_instruction(Instruction::JAL { imm: 0x1000, rd: 1 });
         assert_eq!(cpu.regs.get(1), 0x40000004);
         assert_eq!(cpu.pc, 0x40001000);
     }
@@ -735,8 +678,7 @@ mod tests {
             rs1: 2,
             imm: 0x1000,
             rd: 1,
-        })
-        .unwrap();
+        });
         assert_eq!(cpu.regs.get(1), 0x40000004);
         assert_eq!(cpu.pc, 0x40001000);
     }
@@ -752,16 +694,14 @@ mod tests {
             rs1: 1,
             rs2: 2,
             imm: 0x1000,
-        })
-        .unwrap();
+        });
         assert_eq!(cpu.pc, 0x1000);
         cpu.regs.set(2, 0x1235);
         cpu.exec_instruction(Instruction::BEQ {
             rs1: 1,
             rs2: 2,
             imm: 0x1000,
-        })
-        .unwrap();
+        });
         assert_eq!(cpu.pc, 0x1004);
     }
 
@@ -776,16 +716,14 @@ mod tests {
             rs1: 1,
             rs2: 2,
             imm: 0x1000,
-        })
-        .unwrap();
+        });
         assert_eq!(cpu.pc, 4);
         cpu.regs.set(2, 0x1235);
         cpu.exec_instruction(Instruction::BNE {
             rs1: 1,
             rs2: 2,
             imm: 0x1000,
-        })
-        .unwrap();
+        });
         assert_eq!(cpu.pc, 0x1004);
     }
 
@@ -808,8 +746,7 @@ mod tests {
                 rs1: 1,
                 rs2: 2,
                 imm: 0x1000,
-            })
-            .unwrap();
+            });
             assert_eq!(
                 cpu.pc,
                 if expected { 0x1008 } else { 12 },
@@ -840,8 +777,7 @@ mod tests {
                 rs1: 1,
                 rs2: 2,
                 imm: 0x1000,
-            })
-            .unwrap();
+            });
             assert_eq!(
                 cpu.pc,
                 if expected { 0x1008 } else { 12 },
@@ -872,8 +808,7 @@ mod tests {
                 rs1: 1,
                 rs2: 2,
                 imm: 0x1000,
-            })
-            .unwrap();
+            });
             assert_eq!(
                 cpu.pc,
                 if expected { 0x1008 } else { 12 },
@@ -904,8 +839,7 @@ mod tests {
                 rs1: 1,
                 rs2: 2,
                 imm: 0x1000,
-            })
-            .unwrap();
+            });
             assert_eq!(
                 cpu.pc,
                 if expected { 0x1008 } else { 12 },
@@ -987,8 +921,7 @@ mod tests {
             let mut cpu = Cpu::new();
             cpu.regs.set(1, rs1);
             cpu.pc = 0;
-            cpu.exec_instruction(Instruction::ADDI { rs1: 1, imm, rd: 2 })
-                .unwrap();
+            cpu.exec_instruction(Instruction::ADDI { rs1: 1, imm, rd: 2 });
             assert_eq!(cpu.regs.get(2), expected);
             assert_eq!(cpu.pc, 4);
         }
@@ -1008,8 +941,7 @@ mod tests {
             let mut cpu = Cpu::new();
             cpu.regs.set(1, rs1);
             cpu.pc = 0;
-            cpu.exec_instruction(Instruction::SLTI { rs1: 1, imm, rd: 2 })
-                .unwrap();
+            cpu.exec_instruction(Instruction::SLTI { rs1: 1, imm, rd: 2 });
             assert_eq!(cpu.regs.get(2), expected);
             assert_eq!(cpu.pc, 4);
         }
@@ -1029,8 +961,7 @@ mod tests {
             let mut cpu = Cpu::new();
             cpu.regs.set(1, rs1);
             cpu.pc = 0;
-            cpu.exec_instruction(Instruction::SLTIU { rs1: 1, imm, rd: 2 })
-                .unwrap();
+            cpu.exec_instruction(Instruction::SLTIU { rs1: 1, imm, rd: 2 });
             assert_eq!(cpu.regs.get(2), expected);
             assert_eq!(cpu.pc, 4);
         }
@@ -1040,32 +971,23 @@ mod tests {
     fn test_all_alu_imm() {
         let mut cpu = Cpu::new();
 
-        cpu.exec_instruction(0x00700293.try_into().unwrap())
-            .unwrap(); // addi  x5,  zero, 7
+        cpu.exec_instruction(0x00700293.try_into().unwrap()); // addi  x5,  zero, 7
         assert_eq!(cpu.regs.get(5), 7);
-        cpu.exec_instruction(0x0052f393.try_into().unwrap())
-            .unwrap(); // andi  x7,  x5, 5
+        cpu.exec_instruction(0x0052f393.try_into().unwrap()); // andi  x7,  x5, 5
         assert_eq!(cpu.regs.get(7), 5);
-        cpu.exec_instruction(0x0052e413.try_into().unwrap())
-            .unwrap(); // ori   x8,  x5, 5
+        cpu.exec_instruction(0x0052e413.try_into().unwrap()); // ori   x8,  x5, 5
         assert_eq!(cpu.regs.get(8), 7);
-        cpu.exec_instruction(0x0052c493.try_into().unwrap())
-            .unwrap(); // xori  x9,  x5, 5
+        cpu.exec_instruction(0x0052c493.try_into().unwrap()); // xori  x9,  x5, 5
         assert_eq!(cpu.regs.get(9), 2);
-        cpu.exec_instruction(0x00229513.try_into().unwrap())
-            .unwrap(); // slli  x10, x5, 2
+        cpu.exec_instruction(0x00229513.try_into().unwrap()); // slli  x10, x5, 2
         assert_eq!(cpu.regs.get(10), 28);
-        cpu.exec_instruction(0x0022d593.try_into().unwrap())
-            .unwrap(); // srli  x11, x5, 2
+        cpu.exec_instruction(0x0022d593.try_into().unwrap()); // srli  x11, x5, 2
         assert_eq!(cpu.regs.get(11), 1);
-        cpu.exec_instruction(0x4022d613.try_into().unwrap())
-            .unwrap(); // srai  x12, x5, 2
+        cpu.exec_instruction(0x4022d613.try_into().unwrap()); // srai  x12, x5, 2
         assert_eq!(cpu.regs.get(12), 1);
-        cpu.exec_instruction(0x0052a693.try_into().unwrap())
-            .unwrap(); // slti  x13, x5, 5
+        cpu.exec_instruction(0x0052a693.try_into().unwrap()); // slti  x13, x5, 5
         assert_eq!(cpu.regs.get(13), 0);
-        cpu.exec_instruction(0x0052b713.try_into().unwrap())
-            .unwrap(); // sltiu x14, x5, 5
+        cpu.exec_instruction(0x0052b713.try_into().unwrap()); // sltiu x14, x5, 5
         assert_eq!(cpu.regs.get(14), 0);
     }
 
@@ -1073,13 +995,10 @@ mod tests {
     fn test_srli_sali() {
         let mut cpu = Cpu::new();
 
-        cpu.exec_instruction(0xfff00093.try_into().unwrap())
-            .unwrap(); // li x1, -1
-        cpu.exec_instruction(0x0020d113.try_into().unwrap())
-            .unwrap(); // srli  x2, x1, 2
+        cpu.exec_instruction(0xfff00093.try_into().unwrap()); // li x1, -1
+        cpu.exec_instruction(0x0020d113.try_into().unwrap()); // srli  x2, x1, 2
         assert_eq!(cpu.regs.get(2), 0x3fffffff);
-        cpu.exec_instruction(0x4020d113.try_into().unwrap())
-            .unwrap(); // srai  x2, x1, 2
+        cpu.exec_instruction(0x4020d113.try_into().unwrap()); // srai  x2, x1, 2
         assert_eq!(cpu.regs.get(2), 0xffffffff);
     }
 
@@ -1087,13 +1006,10 @@ mod tests {
     fn test_slti_sltiu() {
         let mut cpu = Cpu::new();
 
-        cpu.exec_instruction(0xfff00093.try_into().unwrap())
-            .unwrap(); // li x1, -1
-        cpu.exec_instruction(0x0000a113.try_into().unwrap())
-            .unwrap(); // slti x2, x1, 0
+        cpu.exec_instruction(0xfff00093.try_into().unwrap()); // li x1, -1
+        cpu.exec_instruction(0x0000a113.try_into().unwrap()); // slti x2, x1, 0
         assert_eq!(cpu.regs.get(2), 1);
-        cpu.exec_instruction(0x0000b193.try_into().unwrap())
-            .unwrap(); // sltiu x3, x1, 0
+        cpu.exec_instruction(0x0000b193.try_into().unwrap()); // sltiu x3, x1, 0
         assert_eq!(cpu.regs.get(3), 0);
     }
 
@@ -1102,49 +1018,34 @@ mod tests {
         let sdram = io::SDRam::new();
         let mut cpu = Cpu::new_with_bus(sdram);
 
-        cpu.exec_instruction(0x361880b7.try_into().unwrap())
-            .unwrap(); // lui x1, 0x36188
-        cpu.exec_instruction(0x71908093.try_into().unwrap())
-            .unwrap(); // addi x1, x1, 1817 # 0x36188719
+        cpu.exec_instruction(0x361880b7.try_into().unwrap()); // lui x1, 0x36188
+        cpu.exec_instruction(0x71908093.try_into().unwrap()); // addi x1, x1, 1817 # 0x36188719
         assert_eq!(cpu.regs.get(1), 0x36188719);
-        cpu.exec_instruction(0x00102023.try_into().unwrap())
-            .unwrap(); // sw x1, 0(x0)
+        cpu.exec_instruction(0x00102023.try_into().unwrap()); // sw x1, 0(x0)
         assert_eq!(cpu.bus.load_word(0).unwrap(), 0x36188719);
-        cpu.exec_instruction(0x00000103.try_into().unwrap())
-            .unwrap(); // lb x2, 0(x0)
+        cpu.exec_instruction(0x00000103.try_into().unwrap()); // lb x2, 0(x0)
         assert_eq!(cpu.regs.get(2), 0x19);
-        cpu.exec_instruction(0x00100103.try_into().unwrap())
-            .unwrap(); // lb x2, 1(x0)
+        cpu.exec_instruction(0x00100103.try_into().unwrap()); // lb x2, 1(x0)
         assert_eq!(cpu.regs.get(2), (-121i32) as u32);
-        cpu.exec_instruction(0x00200103.try_into().unwrap())
-            .unwrap(); // lb x2, 2(x0)
+        cpu.exec_instruction(0x00200103.try_into().unwrap()); // lb x2, 2(x0)
         assert_eq!(cpu.regs.get(2), 0x18);
-        cpu.exec_instruction(0x00300103.try_into().unwrap())
-            .unwrap(); // lb x2, 3(x0)
+        cpu.exec_instruction(0x00300103.try_into().unwrap()); // lb x2, 3(x0)
         assert_eq!(cpu.regs.get(2), 0x36);
-        cpu.exec_instruction(0x00001103.try_into().unwrap())
-            .unwrap(); // lh x2, 0(x0)
+        cpu.exec_instruction(0x00001103.try_into().unwrap()); // lh x2, 0(x0)
         assert_eq!(cpu.regs.get(2), (-30951i32) as u32);
-        cpu.exec_instruction(0x00101103.try_into().unwrap())
-            .unwrap(); // lh x2, 1(x0)
+        cpu.exec_instruction(0x00101103.try_into().unwrap()); // lh x2, 1(x0)
         assert_eq!(cpu.regs.get(2), 0x1887);
-        cpu.exec_instruction(0x00004103.try_into().unwrap())
-            .unwrap(); // lbu x2, 0(x0)
+        cpu.exec_instruction(0x00004103.try_into().unwrap()); // lbu x2, 0(x0)
         assert_eq!(cpu.regs.get(2), 0x19);
-        cpu.exec_instruction(0x00104103.try_into().unwrap())
-            .unwrap(); // lbu x2, 1(x0)
+        cpu.exec_instruction(0x00104103.try_into().unwrap()); // lbu x2, 1(x0)
         assert_eq!(cpu.regs.get(2), 0x87);
-        cpu.exec_instruction(0x00204103.try_into().unwrap())
-            .unwrap(); // lbu x2, 2(x0)
+        cpu.exec_instruction(0x00204103.try_into().unwrap()); // lbu x2, 2(x0)
         assert_eq!(cpu.regs.get(2), 0x18);
-        cpu.exec_instruction(0x00304103.try_into().unwrap())
-            .unwrap(); // lbu x2, 3(x0)
+        cpu.exec_instruction(0x00304103.try_into().unwrap()); // lbu x2, 3(x0)
         assert_eq!(cpu.regs.get(2), 0x36);
-        cpu.exec_instruction(0x00005103.try_into().unwrap())
-            .unwrap(); // lhu x2, 0(x0)
+        cpu.exec_instruction(0x00005103.try_into().unwrap()); // lhu x2, 0(x0)
         assert_eq!(cpu.regs.get(2), 0x8719);
-        cpu.exec_instruction(0x00105103.try_into().unwrap())
-            .unwrap(); // lhu x2, 1(x0)
+        cpu.exec_instruction(0x00105103.try_into().unwrap()); // lhu x2, 1(x0)
         assert_eq!(cpu.regs.get(2), 0x1887);
     }
 }
