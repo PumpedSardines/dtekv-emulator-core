@@ -10,6 +10,9 @@ pub use button::*;
 mod hex_display;
 pub use hex_display::*;
 
+mod led_strip;
+use led_strip::*;
+
 mod memory;
 pub use memory::*;
 
