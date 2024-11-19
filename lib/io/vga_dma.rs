@@ -1,9 +1,33 @@
-use crate::{io, Data};
+use crate::{io, utils, Data};
 
 pub const VGA_DMA_LOWER_ADDR: u32 = 0x4000100;
 pub const VGA_DMA_HIGHER_ADDR: u32 = 0x400010f;
 
-pub struct VgaDma {}
+pub struct VgaDma {
+    buffer: u32,
+    back_buffer: u32,
+    enable: bool,
+    is_swapping: bool,
+}
+
+enum VgaDmaPart {
+    Buffer,
+    BackBuffer,
+    Resolution,
+    StatusControl,
+}
+
+impl From<u32> for VgaDmaPart {
+    fn from(value: u32) -> Self {
+        match value / 4 {
+            0 => VgaDmaPart::Buffer,
+            1 => VgaDmaPart::BackBuffer,
+            2 => VgaDmaPart::Resolution,
+            3 => VgaDmaPart::StatusControl,
+            _ => panic!("VGA DMA only has 4 sections"),
+        }
+    }
+}
 
 impl Default for VgaDma {
     fn default() -> Self {
@@ -14,7 +38,12 @@ impl Default for VgaDma {
 impl VgaDma {
     /// Returns a new Memory object with a given size all set to 0
     pub fn new() -> Self {
-        VgaDma {}
+        VgaDma {
+            buffer: 0x08000000,
+            back_buffer: 0x08000000,
+            enable: false,
+            is_swapping: false,
+        }
     }
 }
 
@@ -23,7 +52,9 @@ impl io::Device<()> for VgaDma {
         (VGA_DMA_LOWER_ADDR, VGA_DMA_HIGHER_ADDR)
     }
 
-    fn clock(&mut self) {}
+    fn clock(&mut self) {
+        self.is_swapping = false;
+    }
 }
 
 impl io::Interruptable for VgaDma {
@@ -33,13 +64,70 @@ impl io::Interruptable for VgaDma {
 }
 
 impl Data<()> for VgaDma {
-    fn load_byte(&self, _addr: u32) -> Result<u8, ()> {
-        // Hard wired to 0
-        Ok(0)
+    fn load_byte(&self, addr: u32) -> Result<u8, ()> {
+        let part: VgaDmaPart = addr.into();
+        let index = addr & 0b11;
+
+        match part {
+            VgaDmaPart::Buffer => {
+                Ok(utils::get_in_u32(self.buffer, addr))
+            }
+            VgaDmaPart::BackBuffer => {
+                Ok(utils::get_in_u32(self.back_buffer, addr))
+            }
+            VgaDmaPart::Resolution => {
+                const RESOLUTION: u32 = (240 << 16) | 320;
+                Ok(utils::get_in_u32(RESOLUTION, index))
+            }
+            VgaDmaPart::StatusControl => {
+                let mut value = 0;
+                if self.is_swapping {
+                    value |= 0b1;
+                }
+                value = value | (1 << 1); // The Addressing mode is always 1
+                if self.enable {
+                    value |= 0b100;
+                }
+                // 5..3 reserved
+                // 7..6 always 0
+                // 11..8 always 0
+                // 15.12 reserved
+                // 23..16 always 0
+                value |= 17 << 24;
+
+                Ok(utils::get_in_u32(value, index))
+            }
+        }
     }
 
-    fn store_byte(&mut self, _addr: u32, _byte: u8) -> Result<(), ()> {
-        // Hard wired to 0
+    fn store_byte(&mut self, addr: u32, byte: u8) -> Result<(), ()> {
+        let part: VgaDmaPart = addr.into();
+        let index = addr & 0b11;
+
+        match part {
+            VgaDmaPart::Buffer => {
+                if self.is_swapping {
+                    return Ok(());
+                }
+
+                let temp = self.buffer;
+                self.buffer = self.back_buffer;
+                self.back_buffer = temp;
+                self.is_swapping = true;
+            }
+            VgaDmaPart::BackBuffer => {
+                self.back_buffer = utils::set_in_u32(self.back_buffer, byte, index);
+            }
+            VgaDmaPart::Resolution => {
+                // Do nothing
+            }
+            VgaDmaPart::StatusControl => {
+                if index == 0 {
+                    self.enable = byte & 0b100 == 1;
+                }
+            }
+        };
+
         Ok(())
     }
 }

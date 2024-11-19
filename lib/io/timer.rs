@@ -49,9 +49,6 @@ impl Timer {
             Duration::from_nanos(((self.period as u64) * 1_000_000_000) / cpu::CLOCK_FEQ as u64);
     }
 
-    pub fn clock(&mut self) {
-    }
-
     pub fn should_interrupt(&self) -> bool {
         self.time_out && self.irq
     }

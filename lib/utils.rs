@@ -4,3 +4,8 @@ pub(crate) fn set_in_u32(value: u32, byte: u8, addr: u32) -> u32 {
     let index = addr % 4;
     (value & !(0xFF << (index * 8))) | (byte as u32) << (index * 8)
 }
+
+pub(crate) fn get_in_u32(value: u32, addr: u32) -> u8 {
+    let index = addr % 4;
+    ((value >> (index * 8)) & 0xFF) as u8
+}
