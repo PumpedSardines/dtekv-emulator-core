@@ -24,7 +24,7 @@ impl From<u32> for VgaDmaPart {
             1 => VgaDmaPart::BackBuffer,
             2 => VgaDmaPart::Resolution,
             3 => VgaDmaPart::StatusControl,
-            _ => panic!("VGA DMA only has 4 sections"),
+            _ => panic!("VGA DMA only has 4 sections, {}", value),
         }
     }
 }
