@@ -105,6 +105,7 @@ impl Data<()> for VgaDma {
     }
 
     fn store_byte(&mut self, addr: u32, byte: u8) -> Result<(), ()> {
+        let addr = addr - VGA_DMA_LOWER_ADDR;
         let part: VgaDmaPart = addr.into();
         let index = addr & 0b11;
 
