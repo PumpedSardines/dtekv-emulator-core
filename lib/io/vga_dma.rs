@@ -69,6 +69,7 @@ impl io::Interruptable for VgaDma {
 
 impl Data<()> for VgaDma {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
+        let addr = addr - VGA_DMA_LOWER_ADDR;
         let part: VgaDmaPart = addr.into();
         let index = addr & 0b11;
 
