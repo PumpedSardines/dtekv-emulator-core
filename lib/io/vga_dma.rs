@@ -57,6 +57,12 @@ impl io::Device<()> for VgaDma {
     }
 
     fn clock(&mut self) {
+        // Swap the buffers if needed
+        if self.is_swapping {
+            let temp = self.buffer;
+            self.buffer = self.back_buffer;
+            self.back_buffer = temp;
+        }
         self.is_swapping = false;
     }
 }
@@ -74,12 +80,8 @@ impl Data<()> for VgaDma {
         let index = addr & 0b11;
 
         match part {
-            VgaDmaPart::Buffer => {
-                Ok(utils::get_in_u32(self.buffer, addr))
-            }
-            VgaDmaPart::BackBuffer => {
-                Ok(utils::get_in_u32(self.back_buffer, addr))
-            }
+            VgaDmaPart::Buffer => Ok(utils::get_in_u32(self.buffer, addr)),
+            VgaDmaPart::BackBuffer => Ok(utils::get_in_u32(self.back_buffer, addr)),
             VgaDmaPart::Resolution => {
                 const RESOLUTION: u32 = (240 << 16) | 320;
                 Ok(utils::get_in_u32(RESOLUTION, index))
@@ -112,14 +114,7 @@ impl Data<()> for VgaDma {
 
         match part {
             VgaDmaPart::Buffer => {
-                if self.is_swapping {
-                    return Ok(());
-                }
-
-                let temp = self.buffer;
-                self.buffer = self.back_buffer;
-                self.back_buffer = temp;
-                self.is_swapping = true;
+                self.is_swapping = true; // Schedule a swap
             }
             VgaDmaPart::BackBuffer => {
                 self.back_buffer = utils::set_in_u32(self.back_buffer, byte, index);
