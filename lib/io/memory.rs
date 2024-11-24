@@ -19,12 +19,6 @@ impl SDRam {
     pub fn new() -> SDRam {
         SDRam { mem: vec![0; SDRAM_SIZE + 1] }
     }
-
-    pub fn load_data_at(&mut self, addr: u32, data: Vec<u8>) {
-        for (i, byte) in data.iter().enumerate() {
-            self.mem[addr as usize + i] = *byte;
-        }
-    }
 }
 
 impl io::Device<()> for SDRam {
