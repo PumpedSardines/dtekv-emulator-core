@@ -34,7 +34,7 @@ pub trait Data<T> {
         Ok(())
     }
 
-    fn load_at<K: Into<u8>, R: IntoIterator<Item = K>>(
+    fn store_at<K: Into<u8>, R: IntoIterator<Item = K>>(
         &mut self,
         offset: u32,
         bin: R,
@@ -49,7 +49,7 @@ pub trait Data<T> {
         Ok(())
     }
 
-    fn read_at(&self, offset: u32, size: usize) -> Result<Vec<u8>, T> {
+    fn load_at(&self, offset: u32, size: usize) -> Result<Vec<u8>, T> {
         let mut buf = Vec::with_capacity(size);
         for i in 0..size {
             buf.push(self.load_byte(offset + i as u32)?);
