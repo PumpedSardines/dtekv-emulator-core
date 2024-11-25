@@ -512,6 +512,16 @@ impl<T: Data<()>> Cpu<T> {
         }
     }
 
+    fn update_instruction_cache(&mut self, addr: u32) {
+        let instruction: Option<Instruction> = self
+            .load_word(addr)
+            .map(|v| v.try_into().ok())
+            .ok()
+            .flatten();
+        let addr = addr / 4;
+        self.instruction_cache[addr as usize] = instruction;
+    }
+
     fn generate_instruction_cache(&mut self) {
         for i in 0..(SDRAM_SIZE / 4) {
             let addr = i as u32;
@@ -702,10 +712,14 @@ where
         Self: Sized,
     {
         for (i, byte) in bin.into_iter().enumerate() {
-            self.store_byte(offset + i as u32, byte.into())?;
+            let i = i as u32;
+            self.store_byte(offset + i, byte.into())?;
+            let index = offset + i;
+            if index & 0b11 == 0 {
+                self.update_instruction_cache(index);
+            }
         }
 
-        self.generate_instruction_cache();
         Ok(())
     }
 }
