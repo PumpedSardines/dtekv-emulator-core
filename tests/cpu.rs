@@ -6,7 +6,7 @@ fn test_factorial_riscv_program() {
     // Factorial program using only ADDI, ADD, and BEQ, result stored in x7
 
     let mut cpu = cpu::Cpu::new_with_bus(io::SDRam::new());
-    let bin: Vec<u32> = vec![
+    let bin: Vec<u8> = vec![
         // 00000000 <factorial_loop-0x8>:
         0x00800293, // li t0,8
         0x00100393, // li t2,1
@@ -24,10 +24,12 @@ fn test_factorial_riscv_program() {
         0xfe0000e3, // beqz zero,8 <factorial_loop>
         // 0000002c <end>:
         0x00000063, // beqz zero,2c <end>
-    ];
-    for (i, instr) in bin.iter().enumerate() {
-        cpu.bus.store_word(i as u32 * 4, *instr).unwrap();
-    }
+    ]
+    .into_iter()
+    .map(|x: u32| [x as u8, (x >> 8) as u8, (x >> 16) as u8, (x >> 24) as u8])
+    .flatten()
+    .collect();
+    cpu.store_at(0, bin).unwrap();
     // Roughly the amount of cycles needed to calculate 8 factorial with the above program
     for _ in 0..200 {
         cpu.clock();

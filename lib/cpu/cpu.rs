@@ -714,10 +714,6 @@ where
         for (i, byte) in bin.into_iter().enumerate() {
             let i = i as u32;
             self.store_byte(offset + i, byte.into())?;
-            let index = offset + i;
-            if index & 0b11 == 0 {
-                self.update_instruction_cache(index);
-            }
         }
 
         Ok(())
