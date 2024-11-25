@@ -2,6 +2,7 @@ use crate::{
     cpu::{self, Bus, Csr, Regs},
     exception,
     instruction::Instruction,
+    io::SDRAM_SIZE,
     Data,
 };
 
@@ -13,6 +14,9 @@ pub const LOAD_CYCLE: u32 = 0;
 #[derive(Debug)]
 pub struct Cpu<T: Data<()>> {
     pub bus: T,
+    // Every time an instruction is fetched we store it into this vector
+    // Instead of fetching it again we can just use the instruction from the cache
+    instruction_cache: Vec<Option<Instruction>>,
     pub regs: Regs,
     pub csr: Csr,
     pub pc: u32,
@@ -24,6 +28,7 @@ impl Cpu<Bus> {
         Cpu {
             bus: Bus::new(),
             regs: Regs::new(),
+            instruction_cache: vec![None; SDRAM_SIZE / 4],
             csr: Csr::new(),
             pc: 0,
             wait_cycles: 0,
@@ -36,6 +41,7 @@ impl<T: Data<()>> Cpu<T> {
         Cpu {
             bus,
             regs: Regs::new(),
+            instruction_cache: vec![None; SDRAM_SIZE / 4],
             csr: Csr::new(),
             pc: 0,
             wait_cycles: 0,
@@ -196,6 +202,9 @@ impl<T: Data<()>> Cpu<T> {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
+
+        self.clear_instruction_cache(addr);
+
         let _ = self.bus.store_byte(addr, rs2 as u8);
         self.pc += 4;
     }
@@ -206,6 +215,9 @@ impl<T: Data<()>> Cpu<T> {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
+
+        self.clear_instruction_cache(addr);
+
         let _ = self.bus.store_halfword(addr, rs2 as u16);
         self.pc += 4;
     }
@@ -216,6 +228,9 @@ impl<T: Data<()>> Cpu<T> {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
+
+        self.clear_instruction_cache(addr);
+
         let _ = self.bus.store_word(addr, rs2);
         self.pc += 4;
     }
@@ -489,15 +504,58 @@ impl<T: Data<()>> Cpu<T> {
         self.pc += 4;
     }
 
-    fn fetch_instruction(&self) -> Result<Instruction, u32> {
+    fn clear_instruction_cache(&mut self, addr: u32) {
+        let addr = addr / 4;
+
+        if addr < self.instruction_cache.len() as u32 {
+            self.instruction_cache[addr as usize] = None;
+        }
+    }
+
+    fn generate_instruction_cache(&mut self) {
+        for i in 0..(SDRAM_SIZE / 4) {
+            let addr = i as u32;
+            let instruction = self
+                .bus
+                .load_word(addr * 4)
+                .map(|word| word.try_into().ok())
+                .ok()
+                .flatten();
+
+            if let Some(instruction) = instruction {
+                self.instruction_cache[i] = Some(instruction);
+            }
+        }
+    }
+
+    fn fetch_instruction(&mut self) -> Result<Instruction, u32> {
         if (self.pc & 3) != 0 {
             return Err(exception::INSTRUCTION_ADDRESS_MISALIGNED);
         }
-        self.bus
+
+        let cache_index = self.pc / 4;
+        let can_cache = cache_index < self.instruction_cache.len() as u32;
+
+        if can_cache {
+            if let Some(instruction) = self.instruction_cache[cache_index as usize] {
+                return Ok(instruction);
+            }
+        }
+
+        let instruction = self
+            .bus
             .load_word(self.pc)
             .unwrap_or(exception::ILLEGAL_INSTRUCTION)
             .try_into()
-            .map_err(|_| exception::ILLEGAL_INSTRUCTION)
+            .map_err(|_| exception::ILLEGAL_INSTRUCTION);
+
+        if can_cache {
+            if let Ok(instruction) = instruction {
+                self.instruction_cache[cache_index as usize] = Some(instruction);
+            }
+        }
+
+        instruction
     }
 
     fn exec_instruction(&mut self, instruction: Instruction) {
@@ -620,6 +678,35 @@ impl<T: Data<()>> Cpu<T> {
                 }
             }
         }
+    }
+}
+
+impl<T> Data<()> for Cpu<T>
+where
+    T: Data<()>,
+{
+    fn load_byte(&self, addr: u32) -> Result<u8, ()> {
+        self.bus.load_byte(addr)
+    }
+
+    fn store_byte(&mut self, addr: u32, byte: u8) -> Result<(), ()> {
+        self.bus.store_byte(addr, byte)
+    }
+
+    fn store_at<K: Into<u8>, R: IntoIterator<Item = K>>(
+        &mut self,
+        offset: u32,
+        bin: R,
+    ) -> Result<(), ()>
+    where
+        Self: Sized,
+    {
+        for (i, byte) in bin.into_iter().enumerate() {
+            self.store_byte(offset + i as u32, byte.into())?;
+        }
+
+        self.generate_instruction_cache();
+        Ok(())
     }
 }
 

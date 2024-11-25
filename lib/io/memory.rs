@@ -1,8 +1,8 @@
 use crate::{Data, io};
 
-const SDRAM_SIZE: usize = 0x3ffffff;
-const SDRAM_LOWER_ADDR: u32 = 0;
-const SDRAM_HIGHER_ADDR: u32 = SDRAM_LOWER_ADDR + SDRAM_SIZE as u32;
+pub const SDRAM_SIZE: usize = 0x3ffffff;
+pub const SDRAM_LOWER_ADDR: u32 = 0;
+pub const SDRAM_HIGHER_ADDR: u32 = SDRAM_LOWER_ADDR + SDRAM_SIZE as u32;
 
 #[derive(Clone)]
 pub struct SDRam {
