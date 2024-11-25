@@ -33,8 +33,6 @@ impl io::Device<()> for HexDisplay {
     fn addr_range(&self) -> (u32, u32) {
         (HEX_DISPLAY_LOWER_ADDR, HEX_DISPLAY_HIGHER_ADDR)
     }
-
-    fn clock(&mut self) {}
 }
 
 impl io::Interruptable for HexDisplay {

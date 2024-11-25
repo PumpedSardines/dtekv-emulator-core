@@ -42,9 +42,6 @@ impl io::Device<()> for Button {
     fn addr_range(&self) -> (u32, u32) {
         (BUTTON_LOWER_ADDR, BUTTON_HIGHER_ADDR)
     }
-
-    fn clock(&mut self) {
-    }
 }
 
 impl io::Interruptable for Button {

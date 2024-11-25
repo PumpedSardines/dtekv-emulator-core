@@ -29,8 +29,6 @@ impl io::Device<()> for LEDStrip {
     fn addr_range(&self) -> (u32, u32) {
         (LED_STRIP_LOWER_ADDR, LED_STRIP_HIGHER_ADDR)
     }
-
-    fn clock(&mut self) {}
 }
 
 impl io::Interruptable for LEDStrip {

@@ -29,8 +29,6 @@ impl io::Device<()> for Uart {
     fn addr_range(&self) -> (u32, u32) {
         (UART_LOWER_ADDR, UART_HIGHER_ADDR)
     }
-
-    fn clock(&mut self) {}
 }
 
 impl io::Interruptable for Uart {

@@ -25,9 +25,6 @@ impl io::Device<()> for SDRam {
     fn addr_range(&self) -> (u32, u32) {
         (SDRAM_LOWER_ADDR, SDRAM_HIGHER_ADDR)
     }
-
-    fn clock(&mut self) {
-    }
 }
 
 impl io::Interruptable for SDRam {
