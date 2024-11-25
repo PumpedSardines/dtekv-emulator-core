@@ -140,8 +140,9 @@ fn test_sieves_c_program() {
     ];
 
     for (i, instr) in bin.iter().enumerate() {
-        cpu.bus.store_word(i as u32 * 4, *instr).unwrap();
+        cpu.store_word(i as u32 * 4, *instr).unwrap();
     }
+    cpu.generate_instruction_cache();
     // The amount of cycles needed to calculate 8 factorial with the above program with some
     // extra cycles to ensure the program has finished
     for _ in 0..2800 {
@@ -255,8 +256,9 @@ fn test_sieves_c_program_o3() {
     ];
 
     for (i, instr) in bin.iter().enumerate() {
-        cpu.bus.store_word(i as u32 * 4, *instr).unwrap();
+        cpu.store_word(i as u32 * 4, *instr).unwrap();
     }
+    cpu.generate_instruction_cache();
     // The amount of cycles needed to calculate 8 factorial with the above program with some
     // extra cycles to ensure the program has finished
     for _ in 0..2000 {
@@ -281,4 +283,49 @@ fn test_sieves_c_program_o3() {
             if is_prime(i) { 1 } else { 0 }
         );
     }
+}
+
+#[test]
+fn writing_and_running() {
+    // This program will write a program into memory, then run that memory
+
+    let bin: Vec<u32> = vec![
+        // 00000000 <_start>:
+        0x00000013, // nop
+        0x00000013, // nop
+        0x002002b7, // lui	t0,0x200
+        0x29328293, // add	t0,t0,659 # 200293 <__stack_size+0x100293>
+        0x10000313, // li	t1,256
+        0x00532023, // sw	t0,0(t1)
+        0x040012b7, // lui	t0,0x4001
+        0xe1328293, // add	t0,t0,-493 # 4000e13 <__stack_size+0x3f00e13>
+        0x10400313, // li	t1,260
+        0x00532023, // sw	t0,0(t1)
+        0x000e02b7, // lui	t0,0xe0
+        0x36728293, // add	t0,t0,871 # e0367 <__heap_size+0xdfb67>
+        0x10800313, // li	t1,264
+        0x00532023, // sw	t0,0(t1)
+        0x10000313, // li	t1,256
+        0x00030f67, // jalr	t5,t1
+        // 00000040 <end>:
+        0x0000006f, // j	40 <end>
+    ];
+
+    let mut cpu = cpu::Cpu::new_with_bus(io::SDRam::new());
+    cpu.reset();
+
+    for (i, instr) in bin.iter().enumerate() {
+        cpu.bus.store_word(i as u32 * 4, *instr).unwrap();
+    }
+
+    cpu.generate_instruction_cache();
+
+    // The amount of cycles needed to calculate 8 factorial with the above program with some
+    // extra cycles to ensure the program has finished
+    for _ in 0..50 {
+        println!("{:?}", cpu.pc);
+        cpu.clock();
+    }
+
+    assert_eq!(cpu.regs.get(5), 2);
 }
