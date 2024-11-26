@@ -52,34 +52,47 @@ impl io::Interruptable for Bus {
     }
 }
 
+macro_rules! data_func_on_all_devices {
+    ($self:expr, $addr:expr, $func:ident, $($arg:expr),*) => {
+        {
+            for device in &$self.devices {
+                let mut device = device.borrow_mut();
+                let (lower, upper) = device.addr_range();
+
+                if $addr >= lower && $addr <= upper {
+                    return Ok(device
+                        .$func($($arg),*)
+                        .expect("A device can't return error in it's address range"));
+                }
+            }
+
+            Err(())
+        }
+    };
+}
+
 impl Data<()> for Bus {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
-        for device in &self.devices {
-            let device = device.borrow();
-            let (lower, upper) = device.addr_range();
-
-            if addr >= lower && addr <= upper {
-                return Ok(device
-                    .load_byte(addr)
-                    .expect("A device can't return error in it's address range"));
-            }
-        }
-
-        Err(())
+        data_func_on_all_devices!(self, addr, load_byte, addr)
     }
 
     fn store_byte(&mut self, addr: u32, byte: u8) -> Result<(), ()> {
-        for device in &mut self.devices {
-            let mut device = device.borrow_mut();
-            let (lower, upper) = device.addr_range();
+        data_func_on_all_devices!(self, addr, store_byte, addr, byte)
+    }
 
-            if addr >= lower && addr <= upper {
-                return Ok(device
-                    .store_byte(addr, byte)
-                    .expect("A device can't return error in it's address range"));
-            }
-        }
+    fn load_halfword(&self, addr: u32) -> Result<u16, ()> {
+        data_func_on_all_devices!(self, addr, load_halfword, addr)
+    }
 
-        Err(())
+    fn store_halfword(&mut self, addr: u32, halfword: u16) -> Result<(), ()> {
+        data_func_on_all_devices!(self, addr, store_halfword, addr, halfword)
+    }
+
+    fn load_word(&self, addr: u32) -> Result<u32, ()> {
+        data_func_on_all_devices!(self, addr, load_word, addr)
+    }
+
+    fn store_word(&mut self, addr: u32, word: u32) -> Result<(), ()> {
+        data_func_on_all_devices!(self, addr, store_word, addr, word)
     }
 }
