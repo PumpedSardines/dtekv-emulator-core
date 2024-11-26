@@ -55,10 +55,6 @@ impl Timer {
 }
 
 impl io::Device<()> for Timer {
-    fn addr_range(&self) -> (u32, u32) {
-        (TIMER_LOWER_ADDR, TIMER_HIGHER_ADDR)
-    }
-
     fn clock(&mut self) {
         if self.running {
             let elapsed = self.clock_start.elapsed();

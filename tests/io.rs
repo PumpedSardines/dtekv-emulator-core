@@ -7,11 +7,17 @@ use dtekv_emulator_core::*;
 fn test_hex_display() {
     // Program that stores the bit mask for the number 9 in the hex display
 
-    let mut bus = cpu::Bus::new();
-    let hex_display = Rc::new(RefCell::new(io::HexDisplay::new()));
-    let sdram = Rc::new(RefCell::new(io::SDRam::new()));
-    bus.attach_device(hex_display.clone());
-    bus.attach_device(sdram.clone());
+    let bus = cpu::Bus {
+        sdram: io::SDRam::new(),
+        button: io::Button::new(),
+        hex_display: io::HexDisplay::new(),
+        led_strip: io::LEDStrip::new(),
+        switch: io::Switch::new(),
+        timer: io::Timer::new(),
+        uart: io::Uart::new(),
+        vga_buffer: io::SDRam::new(),
+        vga_dma: io::VgaDma::new(),
+    };
 
     let mut cpu = cpu::Cpu::new_with_bus(bus);
     let bin: Vec<u32> = vec![
@@ -30,19 +36,24 @@ fn test_hex_display() {
         cpu.clock();
     }
 
-    let hex_display = hex_display.borrow();
-    assert_eq!(hex_display.get(0), 144);
+    assert_eq!(cpu.bus.hex_display.get(0), 144);
 }
 
 #[test]
 fn test_switch_display() {
     // Program that stores the bit mask for the number 9 in the hex display
 
-    let mut bus = cpu::Bus::new();
-    let switch = Rc::new(RefCell::new(io::Switch::new()));
-    let sdram = Rc::new(RefCell::new(io::SDRam::new()));
-    bus.attach_device(switch.clone());
-    bus.attach_device(sdram.clone());
+    let bus = cpu::Bus {
+        sdram: io::SDRam::new(),
+        button: io::Button::new(),
+        hex_display: io::HexDisplay::new(),
+        led_strip: io::LEDStrip::new(),
+        switch: io::Switch::new(),
+        timer: io::Timer::new(),
+        uart: io::Uart::new(),
+        vga_buffer: io::SDRam::new(),
+        vga_dma: io::VgaDma::new(),
+    };
 
     let mut cpu = cpu::Cpu::new_with_bus(bus);
     let bin: Vec<u32> = vec![
@@ -57,9 +68,8 @@ fn test_switch_display() {
     }
 
     {
-        let mut switch = switch.borrow_mut();
-        switch.set(0, true);
-        switch.set(2, true);
+        cpu.bus.switch.set(0, true);
+        cpu.bus.switch.set(2, true);
     }
     // Roughly the amount of cycles needed to calculate 8 factorial with the above program
     for _ in 0..10 {

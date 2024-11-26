@@ -38,11 +38,7 @@ impl Button {
     }
 }
 
-impl io::Device<()> for Button {
-    fn addr_range(&self) -> (u32, u32) {
-        (BUTTON_LOWER_ADDR, BUTTON_HIGHER_ADDR)
-    }
-}
+impl io::Device<()> for Button {}
 
 impl io::Interruptable for Button {
     fn interrupt(&self) -> Option<u32> {

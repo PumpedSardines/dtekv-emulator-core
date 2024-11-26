@@ -23,19 +23,6 @@ pub struct Cpu<T: Data<()>> {
     pub wait_cycles: u32,
 }
 
-impl Cpu<Bus> {
-    pub fn new() -> Cpu<Bus> {
-        Cpu {
-            bus: Bus::new(),
-            regs: Regs::new(),
-            instruction_cache: vec![None; SDRAM_SIZE / 4],
-            csr: Csr::new(),
-            pc: 0,
-            wait_cycles: 0,
-        }
-    }
-}
-
 impl<T: Data<()>> Cpu<T> {
     pub fn new_with_bus(bus: T) -> Cpu<T> {
         Cpu {
@@ -504,7 +491,7 @@ impl<T: Data<()>> Cpu<T> {
         self.pc += 4;
     }
 
-    fn clear_instruction_cache(&mut self, addr: u32) {
+    pub fn clear_instruction_cache(&mut self, addr: u32) {
         let addr = addr / 4;
 
         if addr < self.instruction_cache.len() as u32 {
@@ -512,7 +499,7 @@ impl<T: Data<()>> Cpu<T> {
         }
     }
 
-    fn update_instruction_cache(&mut self, addr: u32) {
+    pub fn update_instruction_cache(&mut self, addr: u32) {
         let instruction: Option<Instruction> = self
             .load_word(addr)
             .map(|v| v.try_into().ok())
@@ -522,7 +509,7 @@ impl<T: Data<()>> Cpu<T> {
         self.instruction_cache[addr as usize] = instruction;
     }
 
-    fn generate_instruction_cache(&mut self) {
+    pub fn generate_instruction_cache(&mut self) {
         for i in 0..(SDRAM_SIZE / 4) {
             let addr = i as u32;
             let instruction = self
@@ -728,7 +715,7 @@ mod tests {
 
     #[test]
     fn test_lui() {
-        let mut cpu = Cpu::new();
+        let mut cpu = Cpu::new_with_bus(io::SDRam::new());
 
         cpu.pc = 0;
         // This seems weird but the imm value is calculated when parsing the instruction and not
@@ -744,7 +731,7 @@ mod tests {
 
     #[test]
     fn test_auipc() {
-        let mut cpu = Cpu::new();
+        let mut cpu = Cpu::new_with_bus(io::SDRam::new());
 
         cpu.pc = 0x40000000;
         cpu.exec_instruction(Instruction::AUIPC {
@@ -757,7 +744,7 @@ mod tests {
 
     #[test]
     fn test_jal() {
-        let mut cpu = Cpu::new();
+        let mut cpu = Cpu::new_with_bus(io::SDRam::new());
 
         cpu.pc = 0x40000000;
         cpu.exec_instruction(Instruction::JAL { imm: 0x1000, rd: 1 });
@@ -767,7 +754,7 @@ mod tests {
 
     #[test]
     fn test_jalr() {
-        let mut cpu = Cpu::new();
+        let mut cpu = Cpu::new_with_bus(io::SDRam::new());
 
         cpu.pc = 0x40000000;
         cpu.regs.set(2, 0x40000000);
@@ -782,7 +769,7 @@ mod tests {
 
     #[test]
     fn test_beq() {
-        let mut cpu = Cpu::new();
+        let mut cpu = Cpu::new_with_bus(io::SDRam::new());
 
         cpu.pc = 0;
         cpu.regs.set(1, 0x1234);
@@ -804,7 +791,7 @@ mod tests {
 
     #[test]
     fn test_bne() {
-        let mut cpu = Cpu::new();
+        let mut cpu = Cpu::new_with_bus(io::SDRam::new());
 
         cpu.pc = 0;
         cpu.regs.set(1, 0x1234);
@@ -834,7 +821,7 @@ mod tests {
         ];
 
         for (rs1, rs2, expected) in data {
-            let mut cpu = Cpu::new();
+            let mut cpu = Cpu::new_with_bus(io::SDRam::new());
 
             cpu.pc = 8;
             cpu.regs.set(1, rs1);
@@ -865,7 +852,7 @@ mod tests {
         ];
 
         for (rs1, rs2, expected) in data {
-            let mut cpu = Cpu::new();
+            let mut cpu = Cpu::new_with_bus(io::SDRam::new());
 
             cpu.pc = 8;
             cpu.regs.set(1, rs1);
@@ -896,7 +883,7 @@ mod tests {
         ];
 
         for (rs1, rs2, expected) in data {
-            let mut cpu = Cpu::new();
+            let mut cpu = Cpu::new_with_bus(io::SDRam::new());
 
             cpu.pc = 8;
             cpu.regs.set(1, rs1);
@@ -927,7 +914,7 @@ mod tests {
         ];
 
         for (rs1, rs2, expected) in data {
-            let mut cpu = Cpu::new();
+            let mut cpu = Cpu::new_with_bus(io::SDRam::new());
 
             cpu.pc = 8;
             cpu.regs.set(1, rs1);
@@ -1015,7 +1002,7 @@ mod tests {
         ];
 
         for (rs1, imm, expected) in data {
-            let mut cpu = Cpu::new();
+            let mut cpu = Cpu::new_with_bus(io::SDRam::new());
             cpu.regs.set(1, rs1);
             cpu.pc = 0;
             cpu.exec_instruction(Instruction::ADDI { rs1: 1, imm, rd: 2 });
@@ -1035,7 +1022,7 @@ mod tests {
         ];
 
         for (rs1, imm, expected) in data {
-            let mut cpu = Cpu::new();
+            let mut cpu = Cpu::new_with_bus(io::SDRam::new());
             cpu.regs.set(1, rs1);
             cpu.pc = 0;
             cpu.exec_instruction(Instruction::SLTI { rs1: 1, imm, rd: 2 });
@@ -1055,7 +1042,7 @@ mod tests {
         ];
 
         for (rs1, imm, expected) in data {
-            let mut cpu = Cpu::new();
+            let mut cpu = Cpu::new_with_bus(io::SDRam::new());
             cpu.regs.set(1, rs1);
             cpu.pc = 0;
             cpu.exec_instruction(Instruction::SLTIU { rs1: 1, imm, rd: 2 });
@@ -1066,7 +1053,7 @@ mod tests {
 
     #[test]
     fn test_all_alu_imm() {
-        let mut cpu = Cpu::new();
+        let mut cpu = Cpu::new_with_bus(io::SDRam::new());
 
         cpu.exec_instruction(0x00700293.try_into().unwrap()); // addi  x5,  zero, 7
         assert_eq!(cpu.regs.get(5), 7);
@@ -1090,7 +1077,7 @@ mod tests {
 
     #[test]
     fn test_srli_sali() {
-        let mut cpu = Cpu::new();
+        let mut cpu = Cpu::new_with_bus(io::SDRam::new());
 
         cpu.exec_instruction(0xfff00093.try_into().unwrap()); // li x1, -1
         cpu.exec_instruction(0x0020d113.try_into().unwrap()); // srli  x2, x1, 2
@@ -1101,7 +1088,7 @@ mod tests {
 
     #[test]
     fn test_slti_sltiu() {
-        let mut cpu = Cpu::new();
+        let mut cpu = Cpu::new_with_bus(io::SDRam::new());
 
         cpu.exec_instruction(0xfff00093.try_into().unwrap()); // li x1, -1
         cpu.exec_instruction(0x0000a113.try_into().unwrap()); // slti x2, x1, 0

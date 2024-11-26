@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 pub trait Data<T> {
     fn load_byte(&self, addr: u32) -> Result<u8, T>;
     fn store_byte(&mut self, addr: u32, byte: u8) -> Result<(), T>;
@@ -56,5 +58,34 @@ pub trait Data<T> {
         }
 
         Ok(buf)
+    }
+}
+
+impl<K, T> Data<T> for Rc<RefCell<K>>
+where
+    K: Data<T>,
+{
+    fn load_byte(&self, addr: u32) -> Result<u8, T> {
+        self.borrow().load_byte(addr)
+    }
+
+    fn store_byte(&mut self, addr: u32, byte: u8) -> Result<(), T> {
+        self.borrow_mut().store_byte(addr, byte)
+    }
+
+    fn load_halfword(&self, addr: u32) -> Result<u16, T> {
+        self.borrow().load_halfword(addr)
+    }
+
+    fn load_word(&self, addr: u32) -> Result<u32, T> {
+        self.borrow().load_word(addr)
+    }
+
+    fn store_halfword(&mut self, addr: u32, halfword: u16) -> Result<(), T> {
+        self.borrow_mut().store_halfword(addr, halfword)
+    }
+
+    fn store_word(&mut self, addr: u32, word: u32) -> Result<(), T> {
+        self.borrow_mut().store_word(addr, word)
     }
 }

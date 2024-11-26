@@ -27,11 +27,7 @@ impl SDRam {
 }
 
 #[cfg(target_endian = "little")]
-impl io::Device<()> for SDRam {
-    fn addr_range(&self) -> (u32, u32) {
-        (SDRAM_LOWER_ADDR, SDRAM_HIGHER_ADDR)
-    }
-}
+impl io::Device<()> for SDRam {}
 
 #[cfg(target_endian = "little")]
 impl io::Interruptable for SDRam {

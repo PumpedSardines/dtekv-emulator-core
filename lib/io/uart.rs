@@ -25,11 +25,7 @@ impl Uart {
     }
 }
 
-impl io::Device<()> for Uart {
-    fn addr_range(&self) -> (u32, u32) {
-        (UART_LOWER_ADDR, UART_HIGHER_ADDR)
-    }
-}
+impl io::Device<()> for Uart {}
 
 impl io::Interruptable for Uart {
     fn interrupt(&self) -> Option<u32> {
