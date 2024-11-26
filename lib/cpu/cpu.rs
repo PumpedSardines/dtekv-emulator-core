@@ -504,7 +504,7 @@ impl<T: Data<()>> Cpu<T> {
         self.pc += 4;
     }
 
-    fn clear_instruction_cache(&mut self, addr: u32) {
+    pub fn clear_instruction_cache(&mut self, addr: u32) {
         let addr = addr / 4;
 
         if addr < self.instruction_cache.len() as u32 {
@@ -512,7 +512,7 @@ impl<T: Data<()>> Cpu<T> {
         }
     }
 
-    fn update_instruction_cache(&mut self, addr: u32) {
+    pub fn update_instruction_cache(&mut self, addr: u32) {
         let instruction: Option<Instruction> = self
             .load_word(addr)
             .map(|v| v.try_into().ok())
@@ -522,7 +522,7 @@ impl<T: Data<()>> Cpu<T> {
         self.instruction_cache[addr as usize] = instruction;
     }
 
-    fn generate_instruction_cache(&mut self) {
+    pub fn generate_instruction_cache(&mut self) {
         for i in 0..(SDRAM_SIZE / 4) {
             let addr = i as u32;
             let instruction = self
