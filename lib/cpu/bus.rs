@@ -1,3 +1,6 @@
+//! You should probably not use the default bus implementation. It is very general purpose and is
+//! quite slow. You should implement your own bus that is faster
+
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
