@@ -1,11 +1,20 @@
 /// Test larger programs using the emulator to ensure the CPU is working correctly
 use dtekv_emulator_core::*;
 
+fn new_cpu() -> cpu::Cpu<io::Bus> {
+    let mut bus = io::Bus::new();
+
+    bus.attach_device((io::SDRAM_LOWER_ADDR, io::SDRAM_HIGHER_ADDR), Box::new(io::SDRam::new()));
+    bus.attach_device((0, u32::MAX), Box::new(io::PanicOnAccess::new()));
+
+    cpu::Cpu::new_with_bus(bus)
+}
+
 #[test]
 fn test_factorial_riscv_program() {
     // Factorial program using only ADDI, ADD, and BEQ, result stored in x7
 
-    let mut cpu = cpu::Cpu::new_with_bus(io::SDRam::new());
+    let mut cpu = new_cpu();
     let bin: Vec<u8> = vec![
         // 00000000 <factorial_loop-0x8>:
         0x00800293, // li t0,8
@@ -26,9 +35,10 @@ fn test_factorial_riscv_program() {
         0x00000063, // beqz zero,2c <end>
     ]
     .into_iter()
-    .map(|x: u32| [x as u8, (x >> 8) as u8, (x >> 16) as u8, (x >> 24) as u8])
+    .map(|x: u32| u32::to_le_bytes(x))
     .flatten()
     .collect();
+
     cpu.store_at(0, bin).unwrap();
     // Roughly the amount of cycles needed to calculate 8 factorial with the above program
     for _ in 0..200 {
@@ -39,7 +49,7 @@ fn test_factorial_riscv_program() {
 
 #[test]
 fn test_sieves_c_program() {
-    let mut cpu = cpu::Cpu::new_with_bus(io::SDRam::new());
+    let mut cpu = new_cpu();
     // Set stack pointer somewhere
     cpu.regs.set(2, 0x2000);
     // Testing the following C program is compiled to RISC-V assembly
@@ -75,7 +85,7 @@ fn test_sieves_c_program() {
 
     */
 
-    let bin: Vec<u32> = vec![
+    let bin: Vec<u8> = vec![
         // 00000000 <_start>:
         0xff010113, // add	x2,x2,-16
         0x00112623, // sw	x1,12(x2)
@@ -137,14 +147,15 @@ fn test_sieves_c_program() {
         0x00008067, // ret
         // 000000e4 <sieves>:
         0x0100,
-    ];
+    ]
+    .into_iter()
+    .map(|x| u32::to_le_bytes(x))
+    .flatten()
+    .collect();
 
-    for (i, instr) in bin.iter().enumerate() {
-        cpu.store_word(i as u32 * 4, *instr).unwrap();
-    }
+    cpu.store_at(0, bin).unwrap();
     cpu.generate_instruction_cache();
-    // The amount of cycles needed to calculate 8 factorial with the above program with some
-    // extra cycles to ensure the program has finished
+
     for _ in 0..2800 {
         cpu.clock();
     }
@@ -171,7 +182,7 @@ fn test_sieves_c_program() {
 
 #[test]
 fn test_sieves_c_program_o3() {
-    let mut cpu = cpu::Cpu::new_with_bus(io::SDRam::new());
+    let mut cpu = new_cpu();
     // Set stack pointer somewhere
     cpu.regs.set(2, 0x2000);
     // Testing the following C program is compiled to RISC-V assembly with the 03 optimization flag
@@ -207,7 +218,7 @@ fn test_sieves_c_program_o3() {
 
     */
 
-    let bin: Vec<u32> = vec![
+    let bin: Vec<u8> = vec![
         // 00000000 <_start>:
         0xff010113, // add	x2,x2,-16
         0x00112623, // sw	x1,12(x2)
@@ -253,14 +264,15 @@ fn test_sieves_c_program_o3() {
         0x00008067, // ret
         // 000000a4 <sieves>:
         0x0100,
-    ];
+    ]
+    .into_iter()
+    .map(|x: u32| u32::to_le_bytes(x))
+    .flatten()
+    .collect();
 
-    for (i, instr) in bin.iter().enumerate() {
-        cpu.store_word(i as u32 * 4, *instr).unwrap();
-    }
+    cpu.store_at(0, bin).unwrap();
     cpu.generate_instruction_cache();
-    // The amount of cycles needed to calculate 8 factorial with the above program with some
-    // extra cycles to ensure the program has finished
+
     for _ in 0..2000 {
         cpu.clock();
     }
@@ -289,7 +301,7 @@ fn test_sieves_c_program_o3() {
 fn writing_and_running() {
     // This program will write a program into memory, then run that memory
 
-    let bin: Vec<u32> = vec![
+    let bin: Vec<u8> = vec![
         // 00000000 <_start>:
         0x00000013, // nop
         0x00000013, // nop
@@ -309,21 +321,15 @@ fn writing_and_running() {
         0x00030f67, // jalr	t5,t1
         // 00000040 <end>:
         0x0000006f, // j	40 <end>
-    ];
+    ].into_iter().map(|x| u32::to_le_bytes(x)).flatten().collect();
 
-    let mut cpu = cpu::Cpu::new_with_bus(io::SDRam::new());
+    let mut cpu = new_cpu();
     cpu.reset();
 
-    for (i, instr) in bin.iter().enumerate() {
-        cpu.bus.store_word(i as u32 * 4, *instr).unwrap();
-    }
-
+    cpu.store_at(0, bin).unwrap();
     cpu.generate_instruction_cache();
 
-    // The amount of cycles needed to calculate 8 factorial with the above program with some
-    // extra cycles to ensure the program has finished
-    for _ in 0..50 {
-        println!("{:?}", cpu.pc);
+    for _ in 0..1000 {
         cpu.clock();
     }
 

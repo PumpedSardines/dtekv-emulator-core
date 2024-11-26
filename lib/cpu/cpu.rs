@@ -1,5 +1,5 @@
 use crate::{
-    cpu::{self, Bus, Csr, Regs},
+    cpu::{self, Csr, Regs},
     exception,
     instruction::Instruction,
     io::SDRAM_SIZE,
@@ -21,19 +21,6 @@ pub struct Cpu<T: Data<()>> {
     pub csr: Csr,
     pub pc: u32,
     pub wait_cycles: u32,
-}
-
-impl Cpu<Bus> {
-    pub fn new() -> Cpu<Bus> {
-        Cpu {
-            bus: Bus::new(),
-            regs: Regs::new(),
-            instruction_cache: vec![None; SDRAM_SIZE / 4],
-            csr: Csr::new(),
-            pc: 0,
-            wait_cycles: 0,
-        }
-    }
 }
 
 impl<T: Data<()>> Cpu<T> {
@@ -628,6 +615,8 @@ impl<T: Data<()>> Cpu<T> {
         }
     }
 
+    /// Sends a interrupt signal to the CPU with a given cause
+    /// This only triggers an interrupt if the Cpu is ready to receive interrupts
     pub fn interrupt(&mut self, cause: u32) {
         // If interrupts are disabled, ignore the interrupt
         if !self.csr.get_mstatus_mie() {
@@ -649,6 +638,7 @@ impl<T: Data<()>> Cpu<T> {
         }
     }
 
+    /// Sends an external interrupt to the CPU
     pub fn external_interrupt(&mut self, cause: u32) {
         if self.csr.load(cpu::MIE) & (1 << cause) == 0 {
             // This interrupt is disabled
@@ -684,7 +674,7 @@ impl<T: Data<()>> Cpu<T> {
                 if !cfg!(debug_assertions) {
                     self.wait_cycles -= 1;
                 } else {
-                    unreachable!("This should never happen since we don't increment the wait cycles in debug mode");
+                    unreachable!("This should never happen since we don't increment wait cycles in debug mode");
                 }
             }
         }
@@ -700,6 +690,7 @@ where
     }
 
     fn store_byte(&mut self, addr: u32, byte: u8) -> Result<(), ()> {
+        self.clear_instruction_cache(addr);
         self.bus.store_byte(addr, byte)
     }
 
@@ -726,9 +717,13 @@ mod tests {
 
     use super::*;
 
+    fn new_cpu() -> Cpu<io::SDRam> {
+        Cpu::new_with_bus(io::SDRam::new())
+    }
+
     #[test]
     fn test_lui() {
-        let mut cpu = Cpu::new();
+        let mut cpu = new_cpu();
 
         cpu.pc = 0;
         // This seems weird but the imm value is calculated when parsing the instruction and not
@@ -744,7 +739,7 @@ mod tests {
 
     #[test]
     fn test_auipc() {
-        let mut cpu = Cpu::new();
+        let mut cpu = new_cpu();
 
         cpu.pc = 0x40000000;
         cpu.exec_instruction(Instruction::AUIPC {
@@ -757,7 +752,7 @@ mod tests {
 
     #[test]
     fn test_jal() {
-        let mut cpu = Cpu::new();
+        let mut cpu = new_cpu();
 
         cpu.pc = 0x40000000;
         cpu.exec_instruction(Instruction::JAL { imm: 0x1000, rd: 1 });
@@ -767,7 +762,7 @@ mod tests {
 
     #[test]
     fn test_jalr() {
-        let mut cpu = Cpu::new();
+        let mut cpu = new_cpu();
 
         cpu.pc = 0x40000000;
         cpu.regs.set(2, 0x40000000);
@@ -782,7 +777,7 @@ mod tests {
 
     #[test]
     fn test_beq() {
-        let mut cpu = Cpu::new();
+        let mut cpu = new_cpu();
 
         cpu.pc = 0;
         cpu.regs.set(1, 0x1234);
@@ -804,7 +799,7 @@ mod tests {
 
     #[test]
     fn test_bne() {
-        let mut cpu = Cpu::new();
+        let mut cpu = new_cpu();
 
         cpu.pc = 0;
         cpu.regs.set(1, 0x1234);
@@ -834,7 +829,7 @@ mod tests {
         ];
 
         for (rs1, rs2, expected) in data {
-            let mut cpu = Cpu::new();
+            let mut cpu = new_cpu();
 
             cpu.pc = 8;
             cpu.regs.set(1, rs1);
@@ -865,7 +860,7 @@ mod tests {
         ];
 
         for (rs1, rs2, expected) in data {
-            let mut cpu = Cpu::new();
+            let mut cpu = new_cpu();
 
             cpu.pc = 8;
             cpu.regs.set(1, rs1);
@@ -896,7 +891,7 @@ mod tests {
         ];
 
         for (rs1, rs2, expected) in data {
-            let mut cpu = Cpu::new();
+            let mut cpu = new_cpu();
 
             cpu.pc = 8;
             cpu.regs.set(1, rs1);
@@ -927,7 +922,7 @@ mod tests {
         ];
 
         for (rs1, rs2, expected) in data {
-            let mut cpu = Cpu::new();
+            let mut cpu = new_cpu();
 
             cpu.pc = 8;
             cpu.regs.set(1, rs1);
@@ -1015,7 +1010,7 @@ mod tests {
         ];
 
         for (rs1, imm, expected) in data {
-            let mut cpu = Cpu::new();
+            let mut cpu = new_cpu();
             cpu.regs.set(1, rs1);
             cpu.pc = 0;
             cpu.exec_instruction(Instruction::ADDI { rs1: 1, imm, rd: 2 });
@@ -1035,7 +1030,7 @@ mod tests {
         ];
 
         for (rs1, imm, expected) in data {
-            let mut cpu = Cpu::new();
+            let mut cpu = new_cpu();
             cpu.regs.set(1, rs1);
             cpu.pc = 0;
             cpu.exec_instruction(Instruction::SLTI { rs1: 1, imm, rd: 2 });
@@ -1055,7 +1050,7 @@ mod tests {
         ];
 
         for (rs1, imm, expected) in data {
-            let mut cpu = Cpu::new();
+            let mut cpu = new_cpu();
             cpu.regs.set(1, rs1);
             cpu.pc = 0;
             cpu.exec_instruction(Instruction::SLTIU { rs1: 1, imm, rd: 2 });
@@ -1066,7 +1061,7 @@ mod tests {
 
     #[test]
     fn test_all_alu_imm() {
-        let mut cpu = Cpu::new();
+        let mut cpu = new_cpu();
 
         cpu.exec_instruction(0x00700293.try_into().unwrap()); // addi  x5,  zero, 7
         assert_eq!(cpu.regs.get(5), 7);
@@ -1090,7 +1085,7 @@ mod tests {
 
     #[test]
     fn test_srli_sali() {
-        let mut cpu = Cpu::new();
+        let mut cpu = new_cpu();
 
         cpu.exec_instruction(0xfff00093.try_into().unwrap()); // li x1, -1
         cpu.exec_instruction(0x0020d113.try_into().unwrap()); // srli  x2, x1, 2
@@ -1101,7 +1096,7 @@ mod tests {
 
     #[test]
     fn test_slti_sltiu() {
-        let mut cpu = Cpu::new();
+        let mut cpu = new_cpu();
 
         cpu.exec_instruction(0xfff00093.try_into().unwrap()); // li x1, -1
         cpu.exec_instruction(0x0000a113.try_into().unwrap()); // slti x2, x1, 0

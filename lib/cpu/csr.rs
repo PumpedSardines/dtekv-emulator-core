@@ -54,7 +54,6 @@ impl Csr {
         self.csrs[MTVEC as usize] & !1
     }
 
-
     pub fn load(&self, addr: u32) -> u32 {
         self.csrs[addr as usize]
     }

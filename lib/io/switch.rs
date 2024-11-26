@@ -35,11 +35,7 @@ impl Switch {
     }
 }
 
-impl io::Device<()> for Switch {
-    fn addr_range(&self) -> (u32, u32) {
-        (SWITCH_LOWER_ADDR, SWITCH_HIGHER_ADDR)
-    }
-}
+impl io::Device<()> for Switch {}
 
 impl io::Interruptable for Switch {
     fn interrupt(&self) -> Option<u32> {

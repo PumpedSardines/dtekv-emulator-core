@@ -25,11 +25,7 @@ impl Default for LEDStrip {
     }
 }
 
-impl io::Device<()> for LEDStrip {
-    fn addr_range(&self) -> (u32, u32) {
-        (LED_STRIP_LOWER_ADDR, LED_STRIP_HIGHER_ADDR)
-    }
-}
+impl io::Device<()> for LEDStrip {}
 
 impl io::Interruptable for LEDStrip {
     fn interrupt(&self) -> Option<u32> {
@@ -47,7 +43,8 @@ impl Data<()> for LEDStrip {
         let addr = addr - LED_STRIP_LOWER_ADDR;
         let index = addr % 4;
 
-        let byte = match index { // Ignore the upper bits, only let through the lower 10 bits
+        let byte = match index {
+            // Ignore the upper bits, only let through the lower 10 bits
             0 => byte,
             1 => byte & 0x3,
             2 => 0,
@@ -56,7 +53,6 @@ impl Data<()> for LEDStrip {
         };
 
         self.leds = utils::set_in_u32(self.leds, byte, addr);
-    
 
         Ok(())
     }

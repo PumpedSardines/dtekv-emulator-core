@@ -1,5 +1,16 @@
+//! Default implementation of different io devices
+//!
+//! You can make your own implementation if you need to, especially the vga buffer, timer and uart
+//! can be pretty platform specific
+
 mod device;
 pub use device::Device;
+
+mod panic_on_access;
+pub use panic_on_access::PanicOnAccess;
+
+mod bus;
+pub use bus::Bus;
 
 mod interruptable;
 pub use interruptable::Interruptable;
@@ -13,8 +24,8 @@ pub use hex_display::*;
 mod led_strip;
 pub use led_strip::*;
 
-mod memory;
-pub use memory::*;
+mod sdram;
+pub use sdram::*;
 
 mod switch;
 pub use switch::*;

@@ -49,16 +49,12 @@ impl Timer {
             Duration::from_nanos(((self.period as u64) * 1_000_000_000) / cpu::CLOCK_FEQ as u64);
     }
 
-    pub fn should_interrupt(&self) -> bool {
+    fn should_interrupt(&self) -> bool {
         self.time_out && self.irq
     }
 }
 
 impl io::Device<()> for Timer {
-    fn addr_range(&self) -> (u32, u32) {
-        (TIMER_LOWER_ADDR, TIMER_HIGHER_ADDR)
-    }
-
     fn clock(&mut self) {
         if self.running {
             let elapsed = self.clock_start.elapsed();

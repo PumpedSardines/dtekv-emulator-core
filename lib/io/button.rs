@@ -33,16 +33,12 @@ impl Button {
         self.pressed
     }
 
-    pub fn should_interrupt(&self) -> bool {
+    fn should_interrupt(&self) -> bool {
         (self.edge_cap & self.interrupt_mask) != 0
     }
 }
 
-impl io::Device<()> for Button {
-    fn addr_range(&self) -> (u32, u32) {
-        (BUTTON_LOWER_ADDR, BUTTON_HIGHER_ADDR)
-    }
-}
+impl io::Device<()> for Button {}
 
 impl io::Interruptable for Button {
     fn interrupt(&self) -> Option<u32> {

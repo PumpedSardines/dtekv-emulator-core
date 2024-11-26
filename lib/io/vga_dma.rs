@@ -52,10 +52,6 @@ impl VgaDma {
 }
 
 impl io::Device<()> for VgaDma {
-    fn addr_range(&self) -> (u32, u32) {
-        (VGA_DMA_LOWER_ADDR, VGA_DMA_HIGHER_ADDR)
-    }
-
     fn clock(&mut self) {
         // Swap the buffers if needed
         if self.is_swapping {

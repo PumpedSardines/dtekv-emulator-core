@@ -7,11 +7,18 @@ use dtekv_emulator_core::*;
 fn test_hex_display() {
     // Program that stores the bit mask for the number 9 in the hex display
 
-    let mut bus = cpu::Bus::new();
+    let mut bus = io::Bus::new();
     let hex_display = Rc::new(RefCell::new(io::HexDisplay::new()));
     let sdram = Rc::new(RefCell::new(io::SDRam::new()));
-    bus.attach_device(hex_display.clone());
-    bus.attach_device(sdram.clone());
+    bus.attach_device(
+        (io::HEX_DISPLAY_LOWER_ADDR, io::HEX_DISPLAY_HIGHER_ADDR),
+        Box::new(hex_display.clone()),
+    );
+    bus.attach_device(
+        (io::SDRAM_LOWER_ADDR, io::SDRAM_HIGHER_ADDR),
+        Box::new(sdram.clone()),
+    );
+    bus.attach_device((0, u32::MAX), Box::new(io::PanicOnAccess::new()));
 
     let mut cpu = cpu::Cpu::new_with_bus(bus);
     let bin: Vec<u32> = vec![
@@ -38,11 +45,18 @@ fn test_hex_display() {
 fn test_switch_display() {
     // Program that stores the bit mask for the number 9 in the hex display
 
-    let mut bus = cpu::Bus::new();
+    let mut bus = io::Bus::new();
     let switch = Rc::new(RefCell::new(io::Switch::new()));
     let sdram = Rc::new(RefCell::new(io::SDRam::new()));
-    bus.attach_device(switch.clone());
-    bus.attach_device(sdram.clone());
+    bus.attach_device(
+        (io::SWITCH_LOWER_ADDR, io::SWITCH_HIGHER_ADDR),
+        Box::new(switch.clone()),
+    );
+    bus.attach_device(
+        (io::SDRAM_LOWER_ADDR, io::SDRAM_HIGHER_ADDR),
+        Box::new(sdram.clone()),
+    );
+    bus.attach_device((0, u32::MAX), Box::new(io::PanicOnAccess::new()));
 
     let mut cpu = cpu::Cpu::new_with_bus(bus);
     let bin: Vec<u32> = vec![
