@@ -22,18 +22,18 @@ pub trait Data<T> {
     }
 
     fn store_halfword(&mut self, addr: u32, halfword: u16) -> Result<(), T> {
-        let bytes = halfword.to_be_bytes();
-        self.store_byte(addr + 0, bytes[1])?;
-        self.store_byte(addr + 1, bytes[0])?;
+        let bytes = halfword.to_le_bytes();
+        self.store_byte(addr + 0, bytes[0])?;
+        self.store_byte(addr + 1, bytes[1])?;
         Ok(())
     }
 
     fn store_word(&mut self, addr: u32, word: u32) -> Result<(), T> {
-        let bytes = word.to_be_bytes();
-        self.store_byte(addr + 0, bytes[3])?;
-        self.store_byte(addr + 1, bytes[2])?;
-        self.store_byte(addr + 2, bytes[1])?;
-        self.store_byte(addr + 3, bytes[0])?;
+        let bytes = word.to_le_bytes();
+        self.store_byte(addr + 0, bytes[0])?;
+        self.store_byte(addr + 1, bytes[1])?;
+        self.store_byte(addr + 2, bytes[2])?;
+        self.store_byte(addr + 3, bytes[3])?;
         Ok(())
     }
 

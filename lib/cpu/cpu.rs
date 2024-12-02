@@ -127,11 +127,9 @@ impl<T: Data<()>> Cpu<T> {
 
     fn lb(&mut self, rs1: u8, imm: u32, rd: u8) {
         self.add_wait_cycles(LOAD_CYCLE);
-
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
         let byte = self
-            .bus
             .load_byte(addr)
             .map(|byte| byte as i8 as i32 as u32)
             .unwrap_or(0xDE);
@@ -141,11 +139,9 @@ impl<T: Data<()>> Cpu<T> {
 
     fn lh(&mut self, rs1: u8, imm: u32, rd: u8) {
         self.add_wait_cycles(LOAD_CYCLE);
-
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
         let halfword = self
-            .bus
             .load_halfword(addr)
             .map(|halfword| halfword as i16 as i32 as u32)
             .unwrap_or(0xDEAD);
@@ -155,70 +151,55 @@ impl<T: Data<()>> Cpu<T> {
 
     fn lw(&mut self, rs1: u8, imm: u32, rd: u8) {
         self.add_wait_cycles(LOAD_CYCLE);
-
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
-        let word = self.bus.load_word(addr).unwrap_or(0xDEAD_BEEF);
+        let word = self.load_word(addr).unwrap_or(0xDEAD_BEEF);
         self.regs.set(rd, word);
         self.pc += 4;
     }
 
     fn lbu(&mut self, rs1: u8, imm: u32, rd: u8) {
         self.add_wait_cycles(LOAD_CYCLE);
-
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
-        let byte = self.bus.load_byte(addr).unwrap_or(0xDE);
+        let byte = self.load_byte(addr).unwrap_or(0xDE);
         self.regs.set(rd, byte as u32);
         self.pc += 4;
     }
 
     fn lhu(&mut self, rs1: u8, imm: u32, rd: u8) {
         self.add_wait_cycles(LOAD_CYCLE);
-
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
-        let halfword = self.bus.load_halfword(addr).unwrap_or(0xDEAD);
+        let halfword = self.load_halfword(addr).unwrap_or(0xDEAD);
         self.regs.set(rd, halfword as u32);
         self.pc += 4;
     }
 
     fn sb(&mut self, rs1: u8, rs2: u8, imm: u32) {
         self.add_wait_cycles(STORE_CYCLE);
-
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
-
-        self.clear_instruction_cache(addr);
-
-        let _ = self.bus.store_byte(addr, rs2 as u8);
+        let _ = self.store_byte(addr, rs2 as u8);
         self.pc += 4;
     }
 
     fn sh(&mut self, rs1: u8, rs2: u8, imm: u32) {
         self.add_wait_cycles(STORE_CYCLE);
-
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
-
-        self.clear_instruction_cache(addr);
-
-        let _ = self.bus.store_halfword(addr, rs2 as u16);
+        let _ = self.store_halfword(addr, rs2 as u16);
         self.pc += 4;
     }
 
     fn sw(&mut self, rs1: u8, rs2: u8, imm: u32) {
         self.add_wait_cycles(STORE_CYCLE);
-
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
-
-        self.clear_instruction_cache(addr);
-
-        let _ = self.bus.store_word(addr, rs2);
+        let _ = self.store_word(addr, rs2);
         self.pc += 4;
     }
 
@@ -693,6 +674,24 @@ where
         self.clear_instruction_cache(addr);
         self.bus.store_byte(addr, byte)
     }
+
+    // fn load_halfword(&self, addr: u32) -> Result<u16, ()> {
+    //     self.bus.load_halfword(addr)
+    // }
+    //
+    // fn store_halfword(&mut self, addr: u32, halfword: u16) -> Result<(), ()> {
+    //     self.clear_instruction_cache(addr);
+    //     self.bus.store_halfword(addr, halfword)
+    // }
+    //
+    // fn load_word(&self, addr: u32) -> Result<u32, ()> {
+    //     self.bus.load_word(addr)
+    // }
+    //
+    // fn store_word(&mut self, addr: u32, word: u32) -> Result<(), ()> {
+    //     self.clear_instruction_cache(addr);
+    //     self.bus.store_word(addr, word)
+    // }
 
     fn store_at<K: Into<u8>, R: IntoIterator<Item = K>>(
         &mut self,
