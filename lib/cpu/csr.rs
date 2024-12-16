@@ -1,6 +1,5 @@
 pub const MSTATUS: u32 = 0x300;
 pub const MIE: u32 = 0x304;
-pub const MTVEC: u32 = 0x305;
 pub const MEPC: u32 = 0x341;
 pub const MCAUSE: u32 = 0x342;
 
@@ -50,8 +49,18 @@ impl Csr {
         self.csrs[MSTATUS as usize] &= !(0b11 << 11);
     }
 
-    pub fn get_mtvec(&self) -> u32 {
-        self.csrs[MTVEC as usize] & !1
+    /// If a given CSR is emulated. By that meaning that there is a reason to read or write to it.
+    ///
+    /// # Arguments
+    /// * `addr` - The address of the CSR to check.
+    ///
+    /// # Returns
+    /// * `bool` - If the CSR is used and has meaning within the emulator.
+    pub fn emulated_csr(&self, addr: u32) -> bool {
+        match addr {
+            MSTATUS | MIE | MEPC | MCAUSE => true,
+            _ => false,
+        }
     }
 
     pub fn load(&self, addr: u32) -> u32 {

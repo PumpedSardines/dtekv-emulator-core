@@ -1,3 +1,5 @@
+#[cfg(feature = "debug")]
+use crate::cpu::{DebugOutput, DebugOutputLine};
 use crate::{
     cpu::{self, Csr, Regs},
     exception,
@@ -17,6 +19,8 @@ pub struct Cpu<T: Data<()>> {
     // Every time an instruction is fetched we store it into this vector
     // Instead of fetching it again we can just use the instruction from the cache
     instruction_cache: Vec<Option<Instruction>>,
+    #[cfg(feature = "debug")]
+    debug_output: DebugOutput,
     pub regs: Regs,
     pub csr: Csr,
     pub pc: u32,
@@ -27,6 +31,8 @@ impl<T: Data<()>> Cpu<T> {
     pub fn new_with_bus(bus: T) -> Cpu<T> {
         Cpu {
             bus,
+            #[cfg(feature = "debug")]
+            debug_output: DebugOutput::new(),
             regs: Regs::new(),
             instruction_cache: vec![None; SDRAM_SIZE / 4],
             csr: Csr::new(),
@@ -129,10 +135,17 @@ impl<T: Data<()>> Cpu<T> {
         self.add_wait_cycles(LOAD_CYCLE);
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
-        let byte = self
-            .load_byte(addr)
-            .map(|byte| byte as i8 as i32 as u32)
-            .unwrap_or(0xDE);
+        let byte = self.load_byte(addr);
+
+        #[cfg(feature = "debug")]
+        if byte.is_err() {
+            self.debug_output.push(DebugOutputLine::LoadOutOfBounds {
+                addr,
+                instr_addr: self.pc,
+            });
+        }
+
+        let byte = byte.map(|byte| byte as i8 as i32 as u32).unwrap_or(0xDE);
         self.regs.set(rd, byte);
         self.pc += 4;
     }
@@ -141,8 +154,17 @@ impl<T: Data<()>> Cpu<T> {
         self.add_wait_cycles(LOAD_CYCLE);
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
-        let halfword = self
-            .load_halfword(addr)
+        let halfword = self.load_halfword(addr);
+
+        #[cfg(feature = "debug")]
+        if halfword.is_err() {
+            self.debug_output.push(DebugOutputLine::LoadOutOfBounds {
+                addr,
+                instr_addr: self.pc,
+            });
+        }
+
+        let halfword = halfword
             .map(|halfword| halfword as i16 as i32 as u32)
             .unwrap_or(0xDEAD);
         self.regs.set(rd, halfword);
@@ -153,7 +175,18 @@ impl<T: Data<()>> Cpu<T> {
         self.add_wait_cycles(LOAD_CYCLE);
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
-        let word = self.load_word(addr).unwrap_or(0xDEAD_BEEF);
+        let word = self.load_word(addr);
+
+        #[cfg(feature = "debug")]
+        if word.is_err() {
+            self.debug_output.push(DebugOutputLine::LoadOutOfBounds {
+                addr,
+                instr_addr: self.pc,
+            });
+        }
+
+        let word = word.unwrap_or(0xDEAD_BEEF);
+
         self.regs.set(rd, word);
         self.pc += 4;
     }
@@ -162,7 +195,18 @@ impl<T: Data<()>> Cpu<T> {
         self.add_wait_cycles(LOAD_CYCLE);
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
-        let byte = self.load_byte(addr).unwrap_or(0xDE);
+        let byte = self.load_byte(addr);
+
+        #[cfg(feature = "debug")]
+        if byte.is_err() {
+            self.debug_output.push(DebugOutputLine::LoadOutOfBounds {
+                addr,
+                instr_addr: self.pc,
+            });
+        }
+
+        let byte = byte.unwrap_or(0xDE);
+
         self.regs.set(rd, byte as u32);
         self.pc += 4;
     }
@@ -171,7 +215,18 @@ impl<T: Data<()>> Cpu<T> {
         self.add_wait_cycles(LOAD_CYCLE);
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
-        let halfword = self.load_halfword(addr).unwrap_or(0xDEAD);
+        let halfword = self.load_halfword(addr);
+
+        #[cfg(feature = "debug")]
+        if halfword.is_err() {
+            self.debug_output.push(DebugOutputLine::LoadOutOfBounds {
+                addr,
+                instr_addr: self.pc,
+            });
+        }
+
+        let halfword = halfword.unwrap_or(0xDEAD);
+
         self.regs.set(rd, halfword as u32);
         self.pc += 4;
     }
@@ -181,7 +236,20 @@ impl<T: Data<()>> Cpu<T> {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
+
+        #[cfg(feature = "debug")]
+        let res = self.store_byte(addr, rs2 as u8);
+        #[cfg(not(feature = "debug"))]
         let _ = self.store_byte(addr, rs2 as u8);
+
+        #[cfg(feature = "debug")]
+        if res.is_err() {
+            self.debug_output.push(DebugOutputLine::StoreOutOfBounds {
+                addr,
+                instr_addr: self.pc,
+            });
+        }
+
         self.pc += 4;
     }
 
@@ -190,7 +258,20 @@ impl<T: Data<()>> Cpu<T> {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
+
+        #[cfg(feature = "debug")]
+        let res = self.store_halfword(addr, rs2 as u16);
+        #[cfg(not(feature = "debug"))]
         let _ = self.store_halfword(addr, rs2 as u16);
+
+        #[cfg(feature = "debug")]
+        if res.is_err() {
+            self.debug_output.push(DebugOutputLine::StoreOutOfBounds {
+                addr,
+                instr_addr: self.pc,
+            });
+        }
+
         self.pc += 4;
     }
 
@@ -199,7 +280,20 @@ impl<T: Data<()>> Cpu<T> {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
+
+        #[cfg(feature = "debug")]
+        let res = self.store_word(addr, rs2);
+        #[cfg(not(feature = "debug"))]
         let _ = self.store_word(addr, rs2);
+
+        #[cfg(feature = "debug")]
+        if res.is_err() {
+            self.debug_output.push(DebugOutputLine::StoreOutOfBounds {
+                addr,
+                instr_addr: self.pc,
+            });
+        }
+
         self.pc += 4;
     }
 
@@ -330,6 +424,14 @@ impl<T: Data<()>> Cpu<T> {
     }
 
     fn csrrw(&mut self, rs1: u8, imm: u32, rd: u8) {
+        #[cfg(feature = "debug")]
+        if !self.csr.emulated_csr(imm) {
+            self.debug_output.push(DebugOutputLine::AccessUselessCsr {
+                csr: imm,
+                instr_addr: self.pc,
+            });
+        }
+
         let value = self.csr.load(imm);
         self.csr.store(imm, self.regs.get(rs1));
         self.regs.set(rd, value);
@@ -337,6 +439,14 @@ impl<T: Data<()>> Cpu<T> {
     }
 
     fn csrrs(&mut self, rs1: u8, imm: u32, rd: u8) {
+        #[cfg(feature = "debug")]
+        if !self.csr.emulated_csr(imm) {
+            self.debug_output.push(DebugOutputLine::AccessUselessCsr {
+                csr: imm,
+                instr_addr: self.pc,
+            });
+        }
+
         let value = self.csr.load(imm);
         self.csr.store(imm, self.csr.load(imm) | self.regs.get(rs1));
         self.regs.set(rd, value);
@@ -344,6 +454,14 @@ impl<T: Data<()>> Cpu<T> {
     }
 
     fn csrrc(&mut self, rs1: u8, imm: u32, rd: u8) {
+        #[cfg(feature = "debug")]
+        if !self.csr.emulated_csr(imm) {
+            self.debug_output.push(DebugOutputLine::AccessUselessCsr {
+                csr: imm,
+                instr_addr: self.pc,
+            });
+        }
+
         let value = self.csr.load(imm);
         self.csr
             .store(imm, self.csr.load(imm) & !self.regs.get(rs1));
@@ -352,16 +470,26 @@ impl<T: Data<()>> Cpu<T> {
     }
 
     fn csrrwi(&mut self, _uimm: u8, _imm: u32, _rd: u8) {
-        // WARNING: Need to research what the dtekv chip does when running into this instruction
-        panic!("csrrwi not implemented");
-        // let value = self.csr.read(imm);
-        // self.csr.write(imm, uimm as u32);
-        // self.regs.set(rd, value);
-        // self.pc += 4;
+        #[cfg(feature = "debug")]
+        self.debug_output
+            .push(DebugOutputLine::InstructionNotImplemented {
+                instr: "CSRRWI",
+                instr_addr: self.pc,
+            });
+        self.pc += 4;
     }
 
     fn csrrsi(&mut self, uimm: u8, imm: u32, rd: u8) {
+        #[cfg(feature = "debug")]
+        if !self.csr.emulated_csr(imm) {
+            self.debug_output.push(DebugOutputLine::AccessUselessCsr {
+                csr: imm,
+                instr_addr: self.pc,
+            });
+        }
+
         let value = self.csr.load(imm);
+
         // NOTE: Dtekv differs from risc-v here:
         self.csr
             .store(imm, self.csr.load(imm) | (1 << (uimm as u32)));
@@ -370,12 +498,13 @@ impl<T: Data<()>> Cpu<T> {
     }
 
     fn csrrci(&mut self, _uimm: u8, _imm: u32, _rd: u8) {
-        // WARNING: Need to research what the dtekv chip does when running into this instruction
-        panic!("csrrci not implemented");
-        // let value = self.csr.read(imm);
-        // self.csr.write(imm, self.csr.read(imm) & !(uimm as u32));
-        // self.regs.set(rd, value);
-        // self.pc += 4;
+        #[cfg(feature = "debug")]
+        self.debug_output
+            .push(DebugOutputLine::InstructionNotImplemented {
+                instr: "CSRRCI",
+                instr_addr: self.pc,
+            });
+        self.pc += 4;
     }
 
     fn mret(&mut self) {
@@ -424,6 +553,11 @@ impl<T: Data<()>> Cpu<T> {
         let rs1 = self.regs.get(rs1) as i32;
         let rs2 = self.regs.get(rs2) as i32;
         if rs2 == 0 {
+            #[cfg(feature = "debug")]
+            self.debug_output.push(DebugOutputLine::DivisionByZero {
+                instr_addr: self.pc,
+            });
+
             self.regs.set(rd, 0xFFFFFFFF);
         } else {
             if rs1 == i32::MIN && rs2 == -1 {
@@ -439,6 +573,11 @@ impl<T: Data<()>> Cpu<T> {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         if rs2 == 0 {
+            #[cfg(feature = "debug")]
+            self.debug_output.push(DebugOutputLine::DivisionByZero {
+                instr_addr: self.pc,
+            });
+
             self.regs.set(rd, 0xFFFFFFFF);
         } else {
             self.regs.set(rd, rs1 / rs2);
@@ -450,6 +589,11 @@ impl<T: Data<()>> Cpu<T> {
         let rs1 = self.regs.get(rs1) as i32;
         let rs2 = self.regs.get(rs2) as i32;
         if rs2 == 0 {
+            #[cfg(feature = "debug")]
+            self.debug_output.push(DebugOutputLine::RemainderByZero {
+                instr_addr: self.pc,
+            });
+
             self.regs.set(rd, rs1 as u32);
         } else {
             if rs1 == i32::MIN && rs2 == -1 {
@@ -465,6 +609,11 @@ impl<T: Data<()>> Cpu<T> {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         if rs2 == 0 {
+            #[cfg(feature = "debug")]
+            self.debug_output.push(DebugOutputLine::RemainderByZero {
+                instr_addr: self.pc,
+            });
+
             self.regs.set(rd, rs1);
         } else {
             self.regs.set(rd, rs1 % rs2);
@@ -508,6 +657,12 @@ impl<T: Data<()>> Cpu<T> {
 
     fn fetch_instruction(&mut self) -> Result<Instruction, u32> {
         if (self.pc & 3) != 0 {
+            #[cfg(feature = "debug")]
+            self.debug_output
+                .push(DebugOutputLine::InstructionMisaligned {
+                    instr_addr: self.pc,
+                });
+
             return Err(exception::INSTRUCTION_ADDRESS_MISALIGNED);
         }
 
@@ -523,9 +678,16 @@ impl<T: Data<()>> Cpu<T> {
         let instruction = self
             .bus
             .load_word(self.pc)
-            .unwrap_or(exception::ILLEGAL_INSTRUCTION)
-            .try_into()
+            .and_then(|word| word.try_into())
             .map_err(|_| exception::ILLEGAL_INSTRUCTION);
+
+        #[cfg(feature = "debug")]
+        if instruction.is_err() {
+            self.debug_output.push(DebugOutputLine::IllegalInstruction {
+                instr: self.bus.load_word(self.pc).unwrap_or(0),
+                instr_addr: self.pc,
+            });
+        }
 
         if can_cache {
             if let Ok(instruction) = instruction {
@@ -675,23 +837,23 @@ where
         self.bus.store_byte(addr, byte)
     }
 
-    // fn load_halfword(&self, addr: u32) -> Result<u16, ()> {
-    //     self.bus.load_halfword(addr)
-    // }
-    //
-    // fn store_halfword(&mut self, addr: u32, halfword: u16) -> Result<(), ()> {
-    //     self.clear_instruction_cache(addr);
-    //     self.bus.store_halfword(addr, halfword)
-    // }
-    //
-    // fn load_word(&self, addr: u32) -> Result<u32, ()> {
-    //     self.bus.load_word(addr)
-    // }
-    //
-    // fn store_word(&mut self, addr: u32, word: u32) -> Result<(), ()> {
-    //     self.clear_instruction_cache(addr);
-    //     self.bus.store_word(addr, word)
-    // }
+    fn load_halfword(&self, addr: u32) -> Result<u16, ()> {
+        self.bus.load_halfword(addr)
+    }
+
+    fn store_halfword(&mut self, addr: u32, halfword: u16) -> Result<(), ()> {
+        self.clear_instruction_cache(addr);
+        self.bus.store_halfword(addr, halfword)
+    }
+
+    fn load_word(&self, addr: u32) -> Result<u32, ()> {
+        self.bus.load_word(addr)
+    }
+
+    fn store_word(&mut self, addr: u32, word: u32) -> Result<(), ()> {
+        self.clear_instruction_cache(addr);
+        self.bus.store_word(addr, word)
+    }
 
     fn store_at<K: Into<u8>, R: IntoIterator<Item = K>>(
         &mut self,
@@ -943,31 +1105,86 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn test_lb() {
-        // TODO: Implement test
-        todo!();
+        let mut cpu = new_cpu();
+
+        let data: Vec<(u8, u32)> = vec![(0x83, (-125i32) as u32), (0x12, 18)];
+
+        for (inp, out) in data {
+            for i in 0..4 {
+                cpu.store_byte(i, inp).unwrap();
+                cpu.exec_instruction(Instruction::LB {
+                    rs1: 0,
+                    imm: i,
+                    rd: 1,
+                });
+                assert_eq!(cpu.regs.get(1), out);
+            }
+        }
     }
 
     #[test]
-    #[should_panic]
     fn test_lh() {
-        // TODO: Implement test
-        todo!();
+        let mut cpu = new_cpu();
+
+        let data: Vec<(u16, u32)> = vec![(0x8313, (-31981i32) as u32), (0x1245, 4677)];
+
+        for (inp, out) in data {
+            for i in 0..4 {
+                cpu.store_halfword(i, inp).unwrap();
+                cpu.exec_instruction(Instruction::LH {
+                    rs1: 0,
+                    imm: i,
+                    rd: 1,
+                });
+                assert_eq!(
+                    cpu.regs.get(1),
+                    out,
+                    "{}",
+                    format!("i: {}, inp: {}, out: {}", i, inp, out)
+                );
+            }
+        }
     }
 
     #[test]
-    #[should_panic]
     fn test_lw() {
-        // TODO: Implement test
-        todo!();
+        let mut cpu = new_cpu();
+
+        let data: Vec<u32> = vec![
+            0x12345678, 0x87654321, 0x00000000, 0xFFFFFFFF, 0x0000FFFF, 0xFFFF0000,
+        ];
+
+        for v in data {
+            for i in 0..4 {
+                cpu.store_word(i, v).unwrap();
+                cpu.exec_instruction(Instruction::LW {
+                    rs1: 0,
+                    imm: i,
+                    rd: 1,
+                });
+                assert_eq!(cpu.regs.get(1), v, "{}", format!("i: {}, value: {}", i, v));
+            }
+        }
     }
 
     #[test]
-    #[should_panic]
     fn test_lbu() {
-        // TODO: Implement test
-        todo!();
+        let mut cpu = new_cpu();
+
+        let data: Vec<(u8, u32)> = vec![(0x83, 131), (0x12, 18)];
+
+        for (inp, out) in data {
+            for i in 0..4 {
+                cpu.store_byte(i, inp).unwrap();
+                cpu.exec_instruction(Instruction::LBU {
+                    rs1: 0,
+                    imm: i,
+                    rd: 1,
+                });
+                assert_eq!(cpu.regs.get(1), out);
+            }
+        }
     }
 
     #[test]
