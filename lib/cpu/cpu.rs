@@ -20,7 +20,7 @@ pub struct Cpu<T: Data<()>> {
     // Instead of fetching it again we can just use the instruction from the cache
     instruction_cache: Vec<Option<Instruction>>,
     #[cfg(feature = "debug")]
-    debug_output: DebugOutput,
+    pub debug_output: DebugOutput,
     pub regs: Regs,
     pub csr: Csr,
     pub pc: u32,
