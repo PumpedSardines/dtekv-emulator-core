@@ -2,8 +2,6 @@ use std::collections::LinkedList;
 
 #[derive(Debug)]
 pub enum DebugOutputLine {
-    /// When an interrupt is triggered by ecall
-    InterruptEcall { instr_addr: u32 },
     /// When a CSR is accessed that is not used anywhere in the emulator
     AccessUselessCsr { csr: u32, instr_addr: u32 },
     /// When an instruction is not implemented
