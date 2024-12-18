@@ -332,32 +332,32 @@ impl TryFrom<u32> for Instruction {
                 CSRRW => Ok(Instruction::CSRRW {
                     rd,
                     rs1,
-                    imm: imm(raw, Format::I),
+                    imm: imm(raw, Format::I) & 0xFFF,
                 }),
                 CSRRS => Ok(Instruction::CSRRS {
                     rd,
                     rs1,
-                    imm: imm(raw, Format::I),
+                    imm: imm(raw, Format::I) & 0xFFF,
                 }),
                 CSRRC => Ok(Instruction::CSRRC {
                     rd,
                     rs1,
-                    imm: imm(raw, Format::I),
+                    imm: imm(raw, Format::I) & 0xFFF,
                 }),
                 CSRRWI => Ok(Instruction::CSRRWI {
                     uimm: rs1,
                     rd,
-                    imm: imm(raw, Format::I),
+                    imm: imm(raw, Format::I) & 0xFFF,
                 }),
                 CSRRSI => Ok(Instruction::CSRRSI {
                     uimm: rs1,
                     rd,
-                    imm: imm(raw, Format::I),
+                    imm: imm(raw, Format::I) & 0xFFF,
                 }),
                 CSRRCI => Ok(Instruction::CSRRCI {
                     uimm: rs1,
                     rd,
-                    imm: imm(raw, Format::I),
+                    imm: imm(raw, Format::I) & 0xFFF,
                 }),
                 _ => Err(()),
             },
@@ -408,5 +408,21 @@ fn imm(v: u32, format: Format) -> u32 {
                 | (((v >> 12) & 0xFF) << 12)
         }
         Format::R => panic!("R format does not have an immediate field"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_csrrs() {
+        let raw = 0xb80022f3;
+        let instr = Instruction::CSRRS {
+            rd: 5,
+            rs1: 0,
+            imm: 0xB80,
+        };
+        assert_eq!(Instruction::try_from(raw), Ok(instr));
     }
 }
