@@ -1,4 +1,4 @@
-use crate::{exception, io, utils, Data};
+use crate::{exception, io, utils};
 
 #[derive(Clone)]
 pub struct Switch {
@@ -49,7 +49,7 @@ impl io::Interruptable for Switch {
     }
 }
 
-impl Data<()> for Switch {
+impl io::Data<()> for Switch {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
         let addr = addr - SWITCH_LOWER_ADDR;
 

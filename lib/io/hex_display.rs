@@ -1,4 +1,4 @@
-use crate::{io, Data};
+use crate::io;
 
 #[derive(Clone)]
 pub struct HexDisplay {
@@ -37,7 +37,7 @@ impl io::Interruptable for HexDisplay {
     }
 }
 
-impl Data<()> for HexDisplay {
+impl io::Data<()> for HexDisplay {
     fn load_byte(&self, _addr: u32) -> Result<u8, ()> {
         // hard wired to 0
         Ok(0)

@@ -1,8 +1,10 @@
-/// This module is quite ugly, with a lot of boilerplate and reimplementation. I think this is the
-/// best way to accomplish this functionality, and in a way the risc-v instructions are just a long
-/// list of hardcoded values.
+//! RISC-V instructions parsing and representation
 
-#[allow(dead_code)]
+// This module is quite ugly, with a lot of boilerplate and reimplementation. I think this is the
+// best way to accomplish this functionality, and in a way the risc-v instructions are just a long
+// list of hardcoded values.
+
+/// The RISC-V instruction types
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Format {
     R,
@@ -13,6 +15,7 @@ pub enum Format {
     J,
 }
 
+/// The RISC-V instructions that are implemented
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Instruction {
     LUI { rd: u8, imm: u32 },

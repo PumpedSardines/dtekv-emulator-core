@@ -1,4 +1,4 @@
-use crate::{exception, Data, io, cpu};
+use crate::{exception, io, cpu};
 use std::time::{Duration, Instant};
 
 pub const TIMER_LOWER_ADDR: u32 = 0x4000020;
@@ -76,7 +76,7 @@ impl io::Interruptable for Timer {
     }
 }
 
-impl Data<()> for Timer {
+impl io::Data<()> for Timer {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
         let addr = addr - TIMER_LOWER_ADDR;
         let part = addr / 4;

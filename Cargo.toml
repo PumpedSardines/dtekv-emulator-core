@@ -8,8 +8,8 @@ name = "dtekv_emulator_core"
 path = "lib/lib.rs"
 
 [features]
-default = ["debug"]
-debug = []
+default = ["debug-console"]
+debug-console = []
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

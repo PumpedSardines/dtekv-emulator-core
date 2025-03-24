@@ -1,4 +1,4 @@
-use crate::{io, utils, Data};
+use crate::{io, utils};
 
 #[derive(Clone)]
 pub struct LEDStrip {
@@ -33,7 +33,7 @@ impl io::Interruptable for LEDStrip {
     }
 }
 
-impl Data<()> for LEDStrip {
+impl io::Data<()> for LEDStrip {
     fn load_byte(&self, _addr: u32) -> Result<u8, ()> {
         // hard wired to 0
         Ok(0)

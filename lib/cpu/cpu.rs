@@ -1,43 +1,40 @@
-#[cfg(feature = "debug")]
-use crate::cpu::{DebugOutput, DebugOutputLine};
+#[cfg(feature = "debug-console")]
+use crate::debug_console::DebugConsole;
 use crate::{
     cpu::{self, Csr, Regs},
     exception,
     instruction::Instruction,
+    io,
+    io::Data,
     io::SDRAM_SIZE,
-    Data,
 };
 
 // TODO: Implement different instruction speed depending on IO device
 pub const CLOCK_FEQ: u32 = 30_000_000;
-pub const STORE_CYCLE: u32 = 0;
-pub const LOAD_CYCLE: u32 = 0;
 
 #[derive(Debug)]
-pub struct Cpu<T: Data<()>> {
+pub struct Cpu<T: io::Data<()>> {
+    /// Data line struct that allows the CPU to communicate to memory and IO devices
     pub bus: T,
-    // Every time an instruction is fetched we store it into this vector
-    // Instead of fetching it again we can just use the instruction from the cache
+    /// Every time an instruction is fetched we store it into this vector
+    /// Instead of fetching it again we can just use the instruction from the cache
     instruction_cache: Vec<Option<Instruction>>,
-    #[cfg(feature = "debug")]
-    pub debug_output: DebugOutput,
+    #[cfg(feature = "debug-console")]
+    pub debug_console: DebugConsole,
     pub regs: Regs,
     pub csr: Csr,
     pub pc: u32,
-    pub wait_cycles: u32,
 }
 
-impl<T: Data<()>> Cpu<T> {
+impl<T: io::Data<()>> Cpu<T> {
     pub fn new_with_bus(bus: T) -> Cpu<T> {
         Cpu {
             bus,
-            #[cfg(feature = "debug")]
-            debug_output: DebugOutput::new(),
+            debug_console: DebugConsole::new(),
             regs: Regs::new(),
             instruction_cache: vec![None; SDRAM_SIZE / 4],
             csr: Csr::new(),
             pc: 0,
-            wait_cycles: 0,
         }
     }
 
@@ -45,7 +42,6 @@ impl<T: Data<()>> Cpu<T> {
         self.regs.reset();
         self.csr.reset();
         self.pc = 4;
-        self.wait_cycles = 0;
         // NOTE: Not sure if this happens when reset is triggered:
         self.csr.set_mstatus_mie(true);
     }
@@ -129,298 +125,6 @@ impl<T: Data<()>> Cpu<T> {
         } else {
             self.pc += 4;
         }
-    }
-
-    fn lb(&mut self, rs1: u8, imm: u32, rd: u8) {
-        self.add_wait_cycles(LOAD_CYCLE);
-        let rs1 = self.regs.get(rs1);
-        let addr = rs1.wrapping_add(imm);
-        let byte = self.load_byte(addr);
-
-        #[cfg(feature = "debug")]
-        if byte.is_err() {
-            self.debug_output.push(DebugOutputLine::LoadOutOfBounds {
-                addr,
-                instr_addr: self.pc,
-            });
-        }
-
-        let byte = byte.map(|byte| byte as i8 as i32 as u32).unwrap_or(0xDE);
-        self.regs.set(rd, byte);
-        self.pc += 4;
-    }
-
-    fn lh(&mut self, rs1: u8, imm: u32, rd: u8) {
-        self.add_wait_cycles(LOAD_CYCLE);
-        let rs1 = self.regs.get(rs1);
-        let addr = rs1.wrapping_add(imm);
-        let halfword = self.load_halfword(addr);
-
-        #[cfg(feature = "debug")]
-        if halfword.is_err() {
-            self.debug_output.push(DebugOutputLine::LoadOutOfBounds {
-                addr,
-                instr_addr: self.pc,
-            });
-        }
-
-        let halfword = halfword
-            .map(|halfword| halfword as i16 as i32 as u32)
-            .unwrap_or(0xDEAD);
-        self.regs.set(rd, halfword);
-        self.pc += 4;
-    }
-
-    fn lw(&mut self, rs1: u8, imm: u32, rd: u8) {
-        self.add_wait_cycles(LOAD_CYCLE);
-        let rs1 = self.regs.get(rs1);
-        let addr = rs1.wrapping_add(imm);
-        let word = self.load_word(addr);
-
-        #[cfg(feature = "debug")]
-        if word.is_err() {
-            self.debug_output.push(DebugOutputLine::LoadOutOfBounds {
-                addr,
-                instr_addr: self.pc,
-            });
-        }
-
-        let word = word.unwrap_or(0xDEAD_BEEF);
-
-        self.regs.set(rd, word);
-        self.pc += 4;
-    }
-
-    fn lbu(&mut self, rs1: u8, imm: u32, rd: u8) {
-        self.add_wait_cycles(LOAD_CYCLE);
-        let rs1 = self.regs.get(rs1);
-        let addr = rs1.wrapping_add(imm);
-        let byte = self.load_byte(addr);
-
-        #[cfg(feature = "debug")]
-        if byte.is_err() {
-            self.debug_output.push(DebugOutputLine::LoadOutOfBounds {
-                addr,
-                instr_addr: self.pc,
-            });
-        }
-
-        let byte = byte.unwrap_or(0xDE);
-
-        self.regs.set(rd, byte as u32);
-        self.pc += 4;
-    }
-
-    fn lhu(&mut self, rs1: u8, imm: u32, rd: u8) {
-        self.add_wait_cycles(LOAD_CYCLE);
-        let rs1 = self.regs.get(rs1);
-        let addr = rs1.wrapping_add(imm);
-        let halfword = self.load_halfword(addr);
-
-        #[cfg(feature = "debug")]
-        if halfword.is_err() {
-            self.debug_output.push(DebugOutputLine::LoadOutOfBounds {
-                addr,
-                instr_addr: self.pc,
-            });
-        }
-
-        let halfword = halfword.unwrap_or(0xDEAD);
-
-        self.regs.set(rd, halfword as u32);
-        self.pc += 4;
-    }
-
-    fn sb(&mut self, rs1: u8, rs2: u8, imm: u32) {
-        self.add_wait_cycles(STORE_CYCLE);
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2);
-        let addr = rs1.wrapping_add(imm);
-
-        #[cfg(feature = "debug")]
-        let res = self.store_byte(addr, rs2 as u8);
-        #[cfg(not(feature = "debug"))]
-        let _ = self.store_byte(addr, rs2 as u8);
-
-        #[cfg(feature = "debug")]
-        if res.is_err() {
-            self.debug_output.push(DebugOutputLine::StoreOutOfBounds {
-                addr,
-                instr_addr: self.pc,
-            });
-        }
-
-        self.pc += 4;
-    }
-
-    fn sh(&mut self, rs1: u8, rs2: u8, imm: u32) {
-        self.add_wait_cycles(STORE_CYCLE);
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2);
-        let addr = rs1.wrapping_add(imm);
-
-        #[cfg(feature = "debug")]
-        let res = self.store_halfword(addr, rs2 as u16);
-        #[cfg(not(feature = "debug"))]
-        let _ = self.store_halfword(addr, rs2 as u16);
-
-        #[cfg(feature = "debug")]
-        if res.is_err() {
-            self.debug_output.push(DebugOutputLine::StoreOutOfBounds {
-                addr,
-                instr_addr: self.pc,
-            });
-        }
-
-        self.pc += 4;
-    }
-
-    fn sw(&mut self, rs1: u8, rs2: u8, imm: u32) {
-        self.add_wait_cycles(STORE_CYCLE);
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2);
-        let addr = rs1.wrapping_add(imm);
-
-        #[cfg(feature = "debug")]
-        let res = self.store_word(addr, rs2);
-        #[cfg(not(feature = "debug"))]
-        let _ = self.store_word(addr, rs2);
-
-        #[cfg(feature = "debug")]
-        if res.is_err() {
-            self.debug_output.push(DebugOutputLine::StoreOutOfBounds {
-                addr,
-                instr_addr: self.pc,
-            });
-        }
-
-        self.pc += 4;
-    }
-
-    fn addi(&mut self, rs1: u8, imm: u32, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        self.regs.set(rd, rs1.wrapping_add(imm));
-        self.pc += 4;
-    }
-
-    fn andi(&mut self, rs1: u8, imm: u32, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        self.regs.set(rd, rs1 & imm);
-        self.pc += 4;
-    }
-
-    fn ori(&mut self, rs1: u8, imm: u32, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        self.regs.set(rd, rs1 | imm);
-        self.pc += 4;
-    }
-
-    fn xori(&mut self, rs1: u8, imm: u32, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        self.regs.set(rd, rs1 ^ imm);
-        self.pc += 4;
-    }
-
-    fn slli(&mut self, rs1: u8, imm: u32, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        self.regs.set(rd, rs1.wrapping_shl(imm));
-        self.pc += 4;
-    }
-
-    fn srli(&mut self, rs1: u8, imm: u32, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        self.regs.set(rd, rs1.wrapping_shr(imm));
-        self.pc += 4;
-    }
-
-    fn srai(&mut self, rs1: u8, imm: u32, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        self.regs.set(rd, (rs1 as i32).wrapping_shr(imm) as u32);
-        self.pc += 4;
-    }
-
-    fn slti(&mut self, rs1: u8, imm: u32, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        self.regs
-            .set(rd, if (rs1 as i32) < (imm as i32) { 1 } else { 0 });
-        self.pc += 4;
-    }
-
-    fn sltiu(&mut self, rs1: u8, imm: u32, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        self.regs.set(rd, if rs1 < imm { 1 } else { 0 });
-        self.pc += 4;
-    }
-
-    fn add(&mut self, rs1: u8, rs2: u8, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2);
-        self.regs.set(rd, rs1.wrapping_add(rs2));
-        self.pc += 4;
-    }
-
-    fn sub(&mut self, rs1: u8, rs2: u8, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2);
-        self.regs.set(rd, rs1.wrapping_sub(rs2));
-        self.pc += 4;
-    }
-
-    fn slt(&mut self, rs1: u8, rs2: u8, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2);
-        self.regs
-            .set(rd, if (rs1 as i32) < (rs2 as i32) { 1 } else { 0 });
-        self.pc += 4;
-    }
-
-    fn sltu(&mut self, rs1: u8, rs2: u8, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2);
-        self.regs.set(rd, if rs1 < rs2 { 1 } else { 0 });
-        self.pc += 4;
-    }
-
-    fn sll(&mut self, rs1: u8, rs2: u8, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2) & 0x1f;
-        self.regs.set(rd, rs1.wrapping_shl(rs2));
-        self.pc += 4;
-    }
-
-    fn srl(&mut self, rs1: u8, rs2: u8, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2) & 0x1f;
-        self.regs.set(rd, rs1.wrapping_shr(rs2));
-        self.pc += 4;
-    }
-
-    fn sra(&mut self, rs1: u8, rs2: u8, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2) & 0x1f;
-        self.regs.set(rd, (rs1 as i32).wrapping_shr(rs2) as u32);
-        self.pc += 4;
-    }
-
-    fn and(&mut self, rs1: u8, rs2: u8, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2);
-        self.regs.set(rd, rs1 & rs2);
-        self.pc += 4;
-    }
-
-    fn or(&mut self, rs1: u8, rs2: u8, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2);
-        self.regs.set(rd, rs1 | rs2);
-        self.pc += 4;
-    }
-
-    fn xor(&mut self, rs1: u8, rs2: u8, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2);
-        self.regs.set(rd, rs1 ^ rs2);
-        self.pc += 4;
     }
 
     fn csrrw(&mut self, rs1: u8, imm: u32, rd: u8) {
@@ -681,7 +385,7 @@ impl<T: Data<()>> Cpu<T> {
             .and_then(|word| word.try_into())
             .map_err(|_| exception::ILLEGAL_INSTRUCTION);
 
-        #[cfg(feature = "debug")]
+        #[cfg(feature = "debug-console")]
         if instruction.is_err() {
             self.debug_output.push(DebugOutputLine::IllegalInstruction {
                 instr: self.bus.load_word(self.pc).unwrap_or(0),
@@ -792,41 +496,23 @@ impl<T: Data<()>> Cpu<T> {
         self.interrupt(cause);
     }
 
-    pub fn add_wait_cycles(&mut self, cycles: u32) {
-        if !cfg!(debug_assertions) {
-            self.wait_cycles += cycles;
-        } else {
-            // In debug mode, the wait cycles are just slowing the emulator down unnecessarily
-            // We don't want realism in debug mode, we just want to test that everything works
-            self.wait_cycles += 0;
-        }
-    }
-
     pub fn clock(&mut self) {
-        match self.wait_cycles {
-            0 => {
-                let instr: Result<Instruction, u32> = self.fetch_instruction();
+        let instr: Result<Instruction, u32> = self.fetch_instruction();
 
-                if let Ok(instr) = instr {
-                    self.exec_instruction(instr);
-                } else {
-                    self.interrupt(instr.unwrap_err());
-                }
+        match instr {
+            Ok(instr) => {
+                self.exec_instruction(instr);
             }
-            _ => {
-                if !cfg!(debug_assertions) {
-                    self.wait_cycles -= 1;
-                } else {
-                    unreachable!("This should never happen since we don't increment wait cycles in debug mode");
-                }
+            Err(exception) => {
+                self.interrupt(exception);
             }
         }
     }
 }
 
-impl<T> Data<()> for Cpu<T>
+impl<T> io::Data<()> for Cpu<T>
 where
-    T: Data<()>,
+    T: io::Data<()>,
 {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
         self.bus.load_byte(addr)
@@ -874,17 +560,13 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::io;
-
     use super::*;
-
-    fn new_cpu() -> Cpu<io::SDRam> {
-        Cpu::new_with_bus(io::SDRam::new())
-    }
+    use crate::io;
+    use crate::test_utils::*;
 
     #[test]
     fn test_lui() {
-        let mut cpu = new_cpu();
+        let mut cpu = new_panic_io_cpu();
 
         cpu.pc = 0;
         // This seems weird but the imm value is calculated when parsing the instruction and not
@@ -1104,180 +786,10 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_lb() {
-        let mut cpu = new_cpu();
-
-        let data: Vec<(u8, u32)> = vec![(0x83, (-125i32) as u32), (0x12, 18)];
-
-        for (inp, out) in data {
-            for i in 0..4 {
-                cpu.store_byte(i, inp).unwrap();
-                cpu.exec_instruction(Instruction::LB {
-                    rs1: 0,
-                    imm: i,
-                    rd: 1,
-                });
-                assert_eq!(cpu.regs.get(1), out);
-            }
-        }
-    }
-
-    #[test]
-    fn test_lh() {
-        let mut cpu = new_cpu();
-
-        let data: Vec<(u16, u32)> = vec![(0x8313, (-31981i32) as u32), (0x1245, 4677)];
-
-        for (inp, out) in data {
-            for i in 0..4 {
-                cpu.store_halfword(i, inp).unwrap();
-                cpu.exec_instruction(Instruction::LH {
-                    rs1: 0,
-                    imm: i,
-                    rd: 1,
-                });
-                assert_eq!(
-                    cpu.regs.get(1),
-                    out,
-                    "{}",
-                    format!("i: {}, inp: {}, out: {}", i, inp, out)
-                );
-            }
-        }
-    }
-
-    #[test]
-    fn test_lw() {
-        let mut cpu = new_cpu();
-
-        let data: Vec<u32> = vec![
-            0x12345678, 0x87654321, 0x00000000, 0xFFFFFFFF, 0x0000FFFF, 0xFFFF0000,
-        ];
-
-        for v in data {
-            for i in 0..4 {
-                cpu.store_word(i, v).unwrap();
-                cpu.exec_instruction(Instruction::LW {
-                    rs1: 0,
-                    imm: i,
-                    rd: 1,
-                });
-                assert_eq!(cpu.regs.get(1), v, "{}", format!("i: {}, value: {}", i, v));
-            }
-        }
-    }
-
-    #[test]
-    fn test_lbu() {
-        let mut cpu = new_cpu();
-
-        let data: Vec<(u8, u32)> = vec![(0x83, 131), (0x12, 18)];
-
-        for (inp, out) in data {
-            for i in 0..4 {
-                cpu.store_byte(i, inp).unwrap();
-                cpu.exec_instruction(Instruction::LBU {
-                    rs1: 0,
-                    imm: i,
-                    rd: 1,
-                });
-                assert_eq!(cpu.regs.get(1), out);
-            }
-        }
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_lhu() {
-        // TODO: Implement test
-        todo!();
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_sb() {
-        // TODO: Implement test
-        todo!();
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_sh() {
-        // TODO: Implement test
-        todo!();
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_sw() {
-        // TODO: Implement test
-        todo!();
-    }
-
-    #[test]
-    fn addi() {
-        let data = vec![
-            (0, 0, 0),
-            (0, 1, 1),
-            (1, 1, 2),
-            (1, u32::MAX, 0),
-            (u32::MAX, 1, 0),
-        ];
-
-        for (rs1, imm, expected) in data {
-            let mut cpu = new_cpu();
-            cpu.regs.set(1, rs1);
-            cpu.pc = 0;
-            cpu.exec_instruction(Instruction::ADDI { rs1: 1, imm, rd: 2 });
-            assert_eq!(cpu.regs.get(2), expected);
-            assert_eq!(cpu.pc, 4);
-        }
-    }
-
-    #[test]
-    fn slti() {
-        let data = vec![
-            (0, 0, 0),
-            (0, 1, 1),
-            (1, 1, 0),
-            (1, u32::MAX, 0),
-            (u32::MAX, 1, 1),
-        ];
-
-        for (rs1, imm, expected) in data {
-            let mut cpu = new_cpu();
-            cpu.regs.set(1, rs1);
-            cpu.pc = 0;
-            cpu.exec_instruction(Instruction::SLTI { rs1: 1, imm, rd: 2 });
-            assert_eq!(cpu.regs.get(2), expected);
-            assert_eq!(cpu.pc, 4);
-        }
-    }
-
-    #[test]
-    fn sltiu() {
-        let data = vec![
-            (0, 0, 0),
-            (0, 1, 1),
-            (1, 1, 0),
-            (1, u32::MAX, 1),
-            (u32::MAX, 1, 0),
-        ];
-
-        for (rs1, imm, expected) in data {
-            let mut cpu = new_cpu();
-            cpu.regs.set(1, rs1);
-            cpu.pc = 0;
-            cpu.exec_instruction(Instruction::SLTIU { rs1: 1, imm, rd: 2 });
-            assert_eq!(cpu.regs.get(2), expected);
-            assert_eq!(cpu.pc, 4);
-        }
-    }
 
     #[test]
     fn test_all_alu_imm() {
-        let mut cpu = new_cpu();
+        let mut cpu = new_cpu().cpu;
 
         cpu.exec_instruction(0x00700293.try_into().unwrap()); // addi  x5,  zero, 7
         assert_eq!(cpu.regs.get(5), 7);
@@ -1321,39 +833,4 @@ mod tests {
         assert_eq!(cpu.regs.get(3), 0);
     }
 
-    #[test]
-    fn test_load_and_save() {
-        let sdram = io::SDRam::new();
-        let mut cpu = Cpu::new_with_bus(sdram);
-
-        cpu.exec_instruction(0x361880b7.try_into().unwrap()); // lui x1, 0x36188
-        cpu.exec_instruction(0x71908093.try_into().unwrap()); // addi x1, x1, 1817 # 0x36188719
-        assert_eq!(cpu.regs.get(1), 0x36188719);
-        cpu.exec_instruction(0x00102023.try_into().unwrap()); // sw x1, 0(x0)
-        assert_eq!(cpu.bus.load_word(0).unwrap(), 0x36188719);
-        cpu.exec_instruction(0x00000103.try_into().unwrap()); // lb x2, 0(x0)
-        assert_eq!(cpu.regs.get(2), 0x19);
-        cpu.exec_instruction(0x00100103.try_into().unwrap()); // lb x2, 1(x0)
-        assert_eq!(cpu.regs.get(2), (-121i32) as u32);
-        cpu.exec_instruction(0x00200103.try_into().unwrap()); // lb x2, 2(x0)
-        assert_eq!(cpu.regs.get(2), 0x18);
-        cpu.exec_instruction(0x00300103.try_into().unwrap()); // lb x2, 3(x0)
-        assert_eq!(cpu.regs.get(2), 0x36);
-        cpu.exec_instruction(0x00001103.try_into().unwrap()); // lh x2, 0(x0)
-        assert_eq!(cpu.regs.get(2), (-30951i32) as u32);
-        cpu.exec_instruction(0x00101103.try_into().unwrap()); // lh x2, 1(x0)
-        assert_eq!(cpu.regs.get(2), 0x1887);
-        cpu.exec_instruction(0x00004103.try_into().unwrap()); // lbu x2, 0(x0)
-        assert_eq!(cpu.regs.get(2), 0x19);
-        cpu.exec_instruction(0x00104103.try_into().unwrap()); // lbu x2, 1(x0)
-        assert_eq!(cpu.regs.get(2), 0x87);
-        cpu.exec_instruction(0x00204103.try_into().unwrap()); // lbu x2, 2(x0)
-        assert_eq!(cpu.regs.get(2), 0x18);
-        cpu.exec_instruction(0x00304103.try_into().unwrap()); // lbu x2, 3(x0)
-        assert_eq!(cpu.regs.get(2), 0x36);
-        cpu.exec_instruction(0x00005103.try_into().unwrap()); // lhu x2, 0(x0)
-        assert_eq!(cpu.regs.get(2), 0x8719);
-        cpu.exec_instruction(0x00105103.try_into().unwrap()); // lhu x2, 1(x0)
-        assert_eq!(cpu.regs.get(2), 0x1887);
-    }
 }

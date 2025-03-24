@@ -1,4 +1,4 @@
-use crate::{io, Data};
+use crate::io;
 
 pub const SDRAM_SIZE: usize = 0x4000000;
 pub const SDRAM_LOWER_ADDR: u32 = 0;
@@ -48,7 +48,7 @@ impl io::Interruptable for SDRam {
 }
 
 #[cfg(target_endian = "big")]
-impl Data<()> for SDRam {
+impl io::Data<()> for SDRam {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
         let addr = addr - SDRAM_LOWER_ADDR;
         if addr > SDRAM_HIGHER_ADDR {
@@ -69,14 +69,14 @@ impl Data<()> for SDRam {
 }
 
 #[cfg(target_endian = "little")]
-impl Data<()> for SDRam {
+impl io::Data<()> for SDRam {
     // A lot of unsafe code here, here's an explanation:
     //
     // Since the DTEK-V memory is in essence just a large 32 bit array layed out in little endian
     // we can emulate that pretty easily on little endian targets. We use a Vec<u32> to store the
     // bytes and then we can access the data as a u8 slice when we need to load or store bytes.
     //
-    // So this is pretty safe, unsafe code really and it speeds up the sdram pretty significantly
+    // So this is pretty safe-unsafe code really and it speeds up the sdram pretty significantly
     // when targeting web-asm :)
 
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
@@ -110,13 +110,13 @@ impl Data<()> for SDRam {
             )
         })
     }
-    
+
     fn store_halfword(&mut self, addr: u32, halfword: u16) -> Result<(), ()> {
         let addr = addr - SDRAM_LOWER_ADDR;
         if addr + 1 > SDRAM_HIGHER_ADDR {
             return Err(());
         }
-    
+
         unsafe {
             core::ptr::write_unaligned(
                 (self.mem.as_mut_ptr() as *mut u8).add(addr as usize) as *mut u16,
@@ -125,7 +125,7 @@ impl Data<()> for SDRam {
         }
         Ok(())
     }
-    
+
     fn load_word(&self, addr: u32) -> Result<u32, ()> {
         let addr = addr - SDRAM_LOWER_ADDR;
         if addr + 3 > SDRAM_HIGHER_ADDR {
@@ -137,13 +137,13 @@ impl Data<()> for SDRam {
             )
         })
     }
-    
+
     fn store_word(&mut self, addr: u32, word: u32) -> Result<(), ()> {
         let addr = addr - SDRAM_LOWER_ADDR;
         if addr + 3 > SDRAM_HIGHER_ADDR {
             return Err(());
         }
-    
+
         unsafe {
             core::ptr::write_unaligned(
                 (self.mem.as_mut_ptr() as *mut u8).add(addr as usize) as *mut u32,
@@ -163,6 +163,7 @@ impl std::fmt::Debug for SDRam {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use io::Data;
 
     // Testing the unsafe code in the SDRam implementation
     #[test]
@@ -174,7 +175,7 @@ mod tests {
     }
 
     #[test]
-    fn test_byte_access_missaligned() {
+    fn test_byte_access_misaligned() {
         let mut sdram = SDRam::new();
         assert_eq!(sdram.load_byte(0), Ok(0));
         assert_eq!(sdram.load_byte(1), Ok(0));
@@ -187,7 +188,7 @@ mod tests {
     }
 
     #[test]
-    fn test_halfword_access_missaligned() {
+    fn test_halfword_access_misaligned() {
         let mut sdram = SDRam::new();
         assert_eq!(sdram.store_halfword(0, 0xD0D0), Ok(()));
         assert_eq!(sdram.store_halfword(1, 0x3A3A), Ok(()));
@@ -200,7 +201,7 @@ mod tests {
     }
 
     #[test]
-    fn test_word_access_missaligned() {
+    fn test_word_access_misaligned() {
         let mut sdram = SDRam::new();
         assert_eq!(sdram.store_word(0, 0x12), Ok(()));
         assert_eq!(sdram.store_word(1, 0x34), Ok(()));
@@ -235,4 +236,3 @@ mod tests {
         assert_eq!(sdram.load_word(3), Ok(0x789abcde));
     }
 }
-

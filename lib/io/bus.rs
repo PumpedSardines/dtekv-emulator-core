@@ -2,10 +2,7 @@
 //! quite slow. You should implement your own bus for your specific needs. This is mostly here for
 //! completeness and for testing purposes.
 
-use crate::{
-    io::{self, Device},
-    Data,
-};
+use crate::io::{self, Data, Device};
 
 #[derive(Debug)]
 pub struct Bus {

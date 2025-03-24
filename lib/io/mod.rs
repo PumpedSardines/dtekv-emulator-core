@@ -3,11 +3,11 @@
 //! You can make your own implementation if you need to, especially the vga buffer, timer and uart
 //! can be pretty platform specific
 
+mod data;
+pub use data::Data;
+
 mod device;
 pub use device::Device;
-
-mod panic_on_access;
-pub use panic_on_access::PanicOnAccess;
 
 mod bus;
 pub use bus::Bus;

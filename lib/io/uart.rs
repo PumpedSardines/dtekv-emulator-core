@@ -1,17 +1,17 @@
-use crate::{io, Data};
+use crate::{io};
 use std::collections::LinkedList;
 
 pub const UART_LOWER_ADDR: u32 = 0x04000040;
 pub const UART_HIGHER_ADDR: u32 = 0x04000047;
 
 #[derive(Clone)]
-pub struct Uart {
+pub struct UART {
     values: LinkedList<char>,
 }
 
-impl Uart {
+impl UART {
     pub fn new() -> Self {
-        Uart {
+        UART {
             values: LinkedList::new(),
         }
     }
@@ -25,21 +25,21 @@ impl Uart {
     }
 }
 
-impl io::Device<()> for Uart {}
+impl io::Device<()> for UART {}
 
-impl io::Interruptable for Uart {
+impl io::Interruptable for UART {
     fn interrupt(&self) -> Option<u32> {
         None
     }
 }
 
-impl Default for Uart {
+impl Default for UART {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Iterator for Uart {
+impl Iterator for UART {
     type Item = char;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -47,7 +47,7 @@ impl Iterator for Uart {
     }
 }
 
-impl Data<()> for Uart {
+impl io::Data<()> for UART {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
         let addr = addr - UART_LOWER_ADDR;
         Ok(if addr >= 4 {
@@ -73,7 +73,7 @@ impl Data<()> for Uart {
     }
 }
 
-impl std::fmt::Debug for Uart {
+impl std::fmt::Debug for UART {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "Uart {{ ... }}")
     }

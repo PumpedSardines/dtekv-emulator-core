@@ -1,4 +1,4 @@
-use crate::{io, utils, Data};
+use crate::{io, utils};
 
 pub const VGA_DMA_LOWER_ADDR: u32 = 0x4000100;
 pub const VGA_DMA_HIGHER_ADDR: u32 = 0x400010f;
@@ -69,7 +69,7 @@ impl io::Interruptable for VgaDma {
     }
 }
 
-impl Data<()> for VgaDma {
+impl io::Data<()> for VgaDma {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
         let addr = addr - VGA_DMA_LOWER_ADDR;
         let part: VgaDmaPart = addr.into();

@@ -1,15 +1,15 @@
-use crate::{io, Data};
+use crate::io;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub trait Device<T>: io::Interruptable + Data<T> + std::fmt::Debug {
+pub trait Device<T>: io::Interruptable + io::Data<T> + std::fmt::Debug {
     // Clock the device
     fn clock(&mut self) {}
 }
 
 impl<K, T> Device<T> for Rc<RefCell<K>>
 where
-    K: Device<T>
+    K: Device<T>,
 {
     fn clock(&mut self) {
         self.borrow_mut().clock();
