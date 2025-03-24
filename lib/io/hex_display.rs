@@ -31,11 +31,7 @@ impl Default for HexDisplay {
 
 impl io::Device<()> for HexDisplay {}
 
-impl io::Interruptable for HexDisplay {
-    fn interrupt(&self) -> Option<u32> {
-        None
-    }
-}
+impl io::Interruptable for HexDisplay {}
 
 impl io::Data<()> for HexDisplay {
     fn load_byte(&self, _addr: u32) -> Result<u8, ()> {

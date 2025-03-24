@@ -62,6 +62,29 @@ impl DebugConsole {
         return self.lines.is_empty();
     }
 
+    pub fn access_useless_csr(&mut self, csr: u32, instr_addr: u32) {
+        self.push(Warning::AccessUselessCsr { csr, instr_addr }.into());
+    }
+    pub fn illegal_instruction(&mut self, instr: u32, instr_addr: u32) {
+        self.push(Warning::IllegalInstruction { instr, instr_addr }.into());
+    }
+
+    pub fn instruction_not_implemented(&mut self, instr: &'static str, instr_addr: u32) {
+        self.push(Warning::InstructionNotImplemented { instr, instr_addr }.into());
+    }
+
+    pub fn division_by_zero(&mut self, instr_addr: u32) {
+        self.push(Warning::DivisionByZero { instr_addr }.into());
+    }
+
+    pub fn remainder_by_zero(&mut self, instr_addr: u32) {
+        self.push(Warning::RemainderByZero { instr_addr }.into());
+    }
+
+    pub fn instruction_misaligned(&mut self, instr_addr: u32) {
+        self.push(Warning::InstructionMisaligned { instr_addr }.into());
+    }
+
     pub fn load_out_of_bounds(&mut self, addr: u32, instr_addr: u32) {
         self.push(Warning::LoadOutOfBounds { addr, instr_addr }.into());
     }

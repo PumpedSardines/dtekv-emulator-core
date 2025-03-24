@@ -195,6 +195,59 @@ mod tests {
 
     #[test]
     fn test_sltiu() {
-        todo!();
+        struct SltiuTestCase {
+            rs1: u8,
+            rs1_value: u32,
+            imm: u32,
+            rd: u8,
+            expected: u32,
+        }
+
+        let cases = vec![
+            SltiuTestCase {
+                rs1: 29,
+                rs1_value: 0,
+                imm: 0,
+                rd: 28,
+                expected: 0,
+            },
+            SltiuTestCase {
+                rs1: 26,
+                rs1_value: 0,
+                imm: 1,
+                rd: 5,
+                expected: 1,
+            },
+            SltiuTestCase {
+                rs1: 6,
+                rs1_value: 1,
+                imm: 1,
+                rd: 6,
+                expected: 0,
+            },
+            SltiuTestCase {
+                rs1: 8,
+                rs1_value: 1,
+                imm: u32::MAX,
+                rd: 9,
+                expected: 1,
+            },
+            SltiuTestCase {
+                rs1: 2,
+                rs1_value: u32::MAX,
+                imm: 1,
+                rd: 4,
+                expected: 0,
+            },
+        ];
+
+        for case in cases {
+            let mut cpu = new_panic_io_cpu();
+            cpu.pc = 0;
+            cpu.regs.set(case.rs1, case.rs1_value);
+            cpu.sltiu(case.rs1, case.imm, case.rd);
+            assert_eq!(cpu.regs.get(case.rd), case.expected);
+            assert_eq!(cpu.pc, 4);
+        }
     }
 }

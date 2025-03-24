@@ -63,11 +63,7 @@ impl io::Device<()> for VgaDma {
     }
 }
 
-impl io::Interruptable for VgaDma {
-    fn interrupt(&self) -> Option<u32> {
-        None
-    }
-}
+impl io::Interruptable for VgaDma {}
 
 impl io::Data<()> for VgaDma {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {

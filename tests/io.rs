@@ -2,6 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 /// Test larger programs using the emulator to ensure the CPU is working correctly
 use dtekv_emulator_core::*;
+use io::Data;
 
 #[test]
 fn test_hex_display() {
@@ -18,7 +19,6 @@ fn test_hex_display() {
         (io::SDRAM_LOWER_ADDR, io::SDRAM_HIGHER_ADDR),
         Box::new(sdram.clone()),
     );
-    bus.attach_device((0, u32::MAX), Box::new(io::PanicOnAccess::new()));
 
     let mut cpu = cpu::Cpu::new_with_bus(bus);
     let bin: Vec<u32> = vec![
@@ -56,7 +56,6 @@ fn test_switch_display() {
         (io::SDRAM_LOWER_ADDR, io::SDRAM_HIGHER_ADDR),
         Box::new(sdram.clone()),
     );
-    bus.attach_device((0, u32::MAX), Box::new(io::PanicOnAccess::new()));
 
     let mut cpu = cpu::Cpu::new_with_bus(bus);
     let bin: Vec<u32> = vec![

@@ -41,11 +41,7 @@ impl SDRam {
 }
 
 impl io::Device<()> for SDRam {}
-impl io::Interruptable for SDRam {
-    fn interrupt(&self) -> Option<u32> {
-        None
-    }
-}
+impl io::Interruptable for SDRam {}
 
 #[cfg(target_endian = "big")]
 impl io::Data<()> for SDRam {

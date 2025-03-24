@@ -3,8 +3,8 @@
 mod cpu;
 pub use cpu::{Cpu, CLOCK_FEQ};
 
-mod csr;
-pub use csr::*;
+pub mod csr;
+pub use csr::CSR;
 
 mod regs;
 pub use regs::Regs;

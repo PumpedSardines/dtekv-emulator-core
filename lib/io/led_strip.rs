@@ -27,11 +27,7 @@ impl Default for LEDStrip {
 
 impl io::Device<()> for LEDStrip {}
 
-impl io::Interruptable for LEDStrip {
-    fn interrupt(&self) -> Option<u32> {
-        None
-    }
-}
+impl io::Interruptable for LEDStrip {}
 
 impl io::Data<()> for LEDStrip {
     fn load_byte(&self, _addr: u32) -> Result<u8, ()> {

@@ -1,7 +1,7 @@
 #[cfg(feature = "debug-console")]
 use crate::debug_console::DebugConsole;
 use crate::{
-    cpu::{self, Csr, Regs},
+    cpu::{self, CSR, Regs},
     exception,
     instruction::Instruction,
     io,
@@ -22,7 +22,7 @@ pub struct Cpu<T: io::Data<()>> {
     #[cfg(feature = "debug-console")]
     pub debug_console: DebugConsole,
     pub regs: Regs,
-    pub csr: Csr,
+    pub csr: CSR,
     pub pc: u32,
 }
 
@@ -30,299 +30,22 @@ impl<T: io::Data<()>> Cpu<T> {
     pub fn new_with_bus(bus: T) -> Cpu<T> {
         Cpu {
             bus,
+            #[cfg(feature = "debug-console")]
             debug_console: DebugConsole::new(),
             regs: Regs::new(),
             instruction_cache: vec![None; SDRAM_SIZE / 4],
-            csr: Csr::new(),
+            csr: CSR::new(),
             pc: 0,
         }
     }
 
+    /// Sends a reset signal to the CPU, the same as pressing the reset button on the DTEK-V board
     pub fn reset(&mut self) {
         self.regs.reset();
         self.csr.reset();
         self.pc = 4;
         // NOTE: Not sure if this happens when reset is triggered:
         self.csr.set_mstatus_mie(true);
-    }
-
-    fn lui(&mut self, imm: u32, rd: u8) {
-        self.regs.set(rd, imm);
-        self.pc += 4;
-    }
-
-    fn auipc(&mut self, imm: u32, rd: u8) {
-        self.regs.set(rd, self.pc.wrapping_add(imm));
-        self.pc += 4;
-    }
-
-    fn jal(&mut self, imm: u32, rd: u8) {
-        self.regs.set(rd, self.pc + 4);
-        self.pc = self.pc.wrapping_add(imm);
-    }
-
-    fn jalr(&mut self, rs1: u8, imm: u32, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        self.regs.set(rd, self.pc + 4);
-        self.pc = rs1.wrapping_add(imm);
-    }
-
-    fn beq(&mut self, rs1: u8, rs2: u8, imm: u32) {
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2);
-        if rs1 == rs2 {
-            self.pc = self.pc.wrapping_add(imm);
-        } else {
-            self.pc += 4;
-        }
-    }
-
-    fn bne(&mut self, rs1: u8, rs2: u8, imm: u32) {
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2);
-        if rs1 != rs2 {
-            self.pc = self.pc.wrapping_add(imm);
-        } else {
-            self.pc += 4;
-        }
-    }
-
-    fn blt(&mut self, rs1: u8, rs2: u8, imm: u32) {
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2);
-        if (rs1 as i32) < (rs2 as i32) {
-            self.pc = self.pc.wrapping_add(imm);
-        } else {
-            self.pc += 4;
-        }
-    }
-
-    fn bge(&mut self, rs1: u8, rs2: u8, imm: u32) {
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2);
-        if (rs1 as i32) >= (rs2 as i32) {
-            self.pc = self.pc.wrapping_add(imm);
-        } else {
-            self.pc += 4;
-        }
-    }
-
-    fn bltu(&mut self, rs1: u8, rs2: u8, imm: u32) {
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2);
-        if rs1 < rs2 {
-            self.pc = self.pc.wrapping_add(imm);
-        } else {
-            self.pc += 4;
-        }
-    }
-
-    fn bgeu(&mut self, rs1: u8, rs2: u8, imm: u32) {
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2);
-        if rs1 >= rs2 {
-            self.pc = self.pc.wrapping_add(imm);
-        } else {
-            self.pc += 4;
-        }
-    }
-
-    fn csrrw(&mut self, rs1: u8, imm: u32, rd: u8) {
-        #[cfg(feature = "debug")]
-        if !self.csr.emulated_csr(imm) {
-            self.debug_output.push(DebugOutputLine::AccessUselessCsr {
-                csr: imm,
-                instr_addr: self.pc,
-            });
-        }
-
-        let value = self.csr.load(imm);
-        self.csr.store(imm, self.regs.get(rs1));
-        self.regs.set(rd, value);
-        self.pc += 4;
-    }
-
-    fn csrrs(&mut self, rs1: u8, imm: u32, rd: u8) {
-        #[cfg(feature = "debug")]
-        if !self.csr.emulated_csr(imm) {
-            self.debug_output.push(DebugOutputLine::AccessUselessCsr {
-                csr: imm,
-                instr_addr: self.pc,
-            });
-        }
-
-        let value = self.csr.load(imm);
-        self.csr.store(imm, self.csr.load(imm) | self.regs.get(rs1));
-        self.regs.set(rd, value);
-        self.pc += 4;
-    }
-
-    fn csrrc(&mut self, rs1: u8, imm: u32, rd: u8) {
-        #[cfg(feature = "debug")]
-        if !self.csr.emulated_csr(imm) {
-            self.debug_output.push(DebugOutputLine::AccessUselessCsr {
-                csr: imm,
-                instr_addr: self.pc,
-            });
-        }
-
-        let value = self.csr.load(imm);
-        self.csr
-            .store(imm, self.csr.load(imm) & !self.regs.get(rs1));
-        self.regs.set(rd, value);
-        self.pc += 4;
-    }
-
-    fn csrrwi(&mut self, _uimm: u8, _imm: u32, _rd: u8) {
-        #[cfg(feature = "debug")]
-        self.debug_output
-            .push(DebugOutputLine::InstructionNotImplemented {
-                instr: "CSRRWI",
-                instr_addr: self.pc,
-            });
-        self.pc += 4;
-    }
-
-    fn csrrsi(&mut self, uimm: u8, imm: u32, rd: u8) {
-        #[cfg(feature = "debug")]
-        if !self.csr.emulated_csr(imm) {
-            self.debug_output.push(DebugOutputLine::AccessUselessCsr {
-                csr: imm,
-                instr_addr: self.pc,
-            });
-        }
-
-        let value = self.csr.load(imm);
-
-        // NOTE: Dtekv differs from risc-v here:
-        self.csr
-            .store(imm, self.csr.load(imm) | (1 << (uimm as u32)));
-        self.regs.set(rd, value);
-        self.pc += 4;
-    }
-
-    fn csrrci(&mut self, _uimm: u8, _imm: u32, _rd: u8) {
-        #[cfg(feature = "debug")]
-        self.debug_output
-            .push(DebugOutputLine::InstructionNotImplemented {
-                instr: "CSRRCI",
-                instr_addr: self.pc,
-            });
-        self.pc += 4;
-    }
-
-    fn mret(&mut self) {
-        self.pc = self.csr.load(cpu::MEPC);
-        self.csr.set_mstatus_mie(self.csr.get_mstatus_mpie());
-        self.csr.set_mstatus_mpie(true);
-    }
-
-    fn ecall(&mut self) {
-        self.pc += 4;
-        self.interrupt(exception::ENVIRONMENT_CALL_FROM_M_MODE);
-    }
-
-    fn mul(&mut self, rs1: u8, rs2: u8, rd: u8) {
-        let rs1 = self.regs.get(rs1) as i32 as i64;
-        let rs2 = self.regs.get(rs2) as i32 as i64;
-        self.regs.set(rd, rs1.wrapping_mul(rs2) as u32);
-        self.pc += 4;
-    }
-
-    fn mulh(&mut self, rs1: u8, rs2: u8, rd: u8) {
-        let rs1 = self.regs.get(rs1) as i32 as i64;
-        let rs2 = self.regs.get(rs2) as i32 as i64;
-        let result = rs1.wrapping_mul(rs2);
-        self.regs.set(rd, (result >> 32) as u32);
-        self.pc += 4;
-    }
-
-    fn mulhu(&mut self, rs1: u8, rs2: u8, rd: u8) {
-        let rs1 = self.regs.get(rs1) as u32 as u64;
-        let rs2 = self.regs.get(rs2) as u32 as u64;
-        let result = rs1.wrapping_mul(rs2);
-        self.regs.set(rd, (result >> 32) as u32);
-        self.pc += 4;
-    }
-
-    fn mulhsu(&mut self, rs1: u8, rs2: u8, rd: u8) {
-        let rs1 = self.regs.get(rs1) as i32 as i64;
-        let rs2 = self.regs.get(rs2) as u32 as i64;
-        let result = rs1.wrapping_mul(rs2);
-        self.regs.set(rd, (result >> 32) as u32);
-        self.pc += 4;
-    }
-
-    fn div(&mut self, rs1: u8, rs2: u8, rd: u8) {
-        let rs1 = self.regs.get(rs1) as i32;
-        let rs2 = self.regs.get(rs2) as i32;
-        if rs2 == 0 {
-            #[cfg(feature = "debug")]
-            self.debug_output.push(DebugOutputLine::DivisionByZero {
-                instr_addr: self.pc,
-            });
-
-            self.regs.set(rd, 0xFFFFFFFF);
-        } else {
-            if rs1 == i32::MIN && rs2 == -1 {
-                self.regs.set(rd, rs1 as u32);
-            } else {
-                self.regs.set(rd, (rs1 / rs2) as u32);
-            }
-        }
-        self.pc += 4;
-    }
-
-    fn divu(&mut self, rs1: u8, rs2: u8, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2);
-        if rs2 == 0 {
-            #[cfg(feature = "debug")]
-            self.debug_output.push(DebugOutputLine::DivisionByZero {
-                instr_addr: self.pc,
-            });
-
-            self.regs.set(rd, 0xFFFFFFFF);
-        } else {
-            self.regs.set(rd, rs1 / rs2);
-        }
-        self.pc += 4;
-    }
-
-    fn rem(&mut self, rs1: u8, rs2: u8, rd: u8) {
-        let rs1 = self.regs.get(rs1) as i32;
-        let rs2 = self.regs.get(rs2) as i32;
-        if rs2 == 0 {
-            #[cfg(feature = "debug")]
-            self.debug_output.push(DebugOutputLine::RemainderByZero {
-                instr_addr: self.pc,
-            });
-
-            self.regs.set(rd, rs1 as u32);
-        } else {
-            if rs1 == i32::MIN && rs2 == -1 {
-                self.regs.set(rd, 0);
-            } else {
-                self.regs.set(rd, (rs1 % rs2) as u32);
-            }
-        }
-        self.pc += 4;
-    }
-
-    fn remu(&mut self, rs1: u8, rs2: u8, rd: u8) {
-        let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2);
-        if rs2 == 0 {
-            #[cfg(feature = "debug")]
-            self.debug_output.push(DebugOutputLine::RemainderByZero {
-                instr_addr: self.pc,
-            });
-
-            self.regs.set(rd, rs1);
-        } else {
-            self.regs.set(rd, rs1 % rs2);
-        }
-        self.pc += 4;
     }
 
     pub fn clear_instruction_cache(&mut self, addr: u32) {
@@ -361,12 +84,8 @@ impl<T: io::Data<()>> Cpu<T> {
 
     fn fetch_instruction(&mut self) -> Result<Instruction, u32> {
         if (self.pc & 3) != 0 {
-            #[cfg(feature = "debug")]
-            self.debug_output
-                .push(DebugOutputLine::InstructionMisaligned {
-                    instr_addr: self.pc,
-                });
-
+            #[cfg(feature = "debug-console")]
+            self.debug_console.instruction_misaligned(self.pc);
             return Err(exception::INSTRUCTION_ADDRESS_MISALIGNED);
         }
 
@@ -383,15 +102,13 @@ impl<T: io::Data<()>> Cpu<T> {
             .bus
             .load_word(self.pc)
             .and_then(|word| word.try_into())
-            .map_err(|_| exception::ILLEGAL_INSTRUCTION);
+            .map_err(|_| {
+                #[cfg(feature = "debug-console")]
+                self.debug_console
+                    .illegal_instruction(self.bus.load_word(self.pc).unwrap_or(0), self.pc);
 
-        #[cfg(feature = "debug-console")]
-        if instruction.is_err() {
-            self.debug_output.push(DebugOutputLine::IllegalInstruction {
-                instr: self.bus.load_word(self.pc).unwrap_or(0),
-                instr_addr: self.pc,
+                exception::ILLEGAL_INSTRUCTION
             });
-        }
 
         if can_cache {
             if let Ok(instruction) = instruction {
@@ -565,232 +282,8 @@ mod tests {
     use crate::test_utils::*;
 
     #[test]
-    fn test_lui() {
-        let mut cpu = new_panic_io_cpu();
-
-        cpu.pc = 0;
-        // This seems weird but the imm value is calculated when parsing the instruction and not
-        // when the instruction is executed. That's why we check if the reg x1 is the same as we
-        // passed in
-        cpu.exec_instruction(Instruction::LUI {
-            imm: 0x12345,
-            rd: 1,
-        });
-        assert_eq!(cpu.regs.get(1), 0x12345);
-        assert_eq!(cpu.pc, 4);
-    }
-
-    #[test]
-    fn test_auipc() {
-        let mut cpu = new_cpu();
-
-        cpu.pc = 0x40000000;
-        cpu.exec_instruction(Instruction::AUIPC {
-            imm: 0x3000000,
-            rd: 1,
-        });
-        assert_eq!(cpu.regs.get(1), 0x43000000);
-        assert_eq!(cpu.pc, 0x40000004);
-    }
-
-    #[test]
-    fn test_jal() {
-        let mut cpu = new_cpu();
-
-        cpu.pc = 0x40000000;
-        cpu.exec_instruction(Instruction::JAL { imm: 0x1000, rd: 1 });
-        assert_eq!(cpu.regs.get(1), 0x40000004);
-        assert_eq!(cpu.pc, 0x40001000);
-    }
-
-    #[test]
-    fn test_jalr() {
-        let mut cpu = new_cpu();
-
-        cpu.pc = 0x40000000;
-        cpu.regs.set(2, 0x40000000);
-        cpu.exec_instruction(Instruction::JALR {
-            rs1: 2,
-            imm: 0x1000,
-            rd: 1,
-        });
-        assert_eq!(cpu.regs.get(1), 0x40000004);
-        assert_eq!(cpu.pc, 0x40001000);
-    }
-
-    #[test]
-    fn test_beq() {
-        let mut cpu = new_cpu();
-
-        cpu.pc = 0;
-        cpu.regs.set(1, 0x1234);
-        cpu.regs.set(2, 0x1234);
-        cpu.exec_instruction(Instruction::BEQ {
-            rs1: 1,
-            rs2: 2,
-            imm: 0x1000,
-        });
-        assert_eq!(cpu.pc, 0x1000);
-        cpu.regs.set(2, 0x1235);
-        cpu.exec_instruction(Instruction::BEQ {
-            rs1: 1,
-            rs2: 2,
-            imm: 0x1000,
-        });
-        assert_eq!(cpu.pc, 0x1004);
-    }
-
-    #[test]
-    fn test_bne() {
-        let mut cpu = new_cpu();
-
-        cpu.pc = 0;
-        cpu.regs.set(1, 0x1234);
-        cpu.regs.set(2, 0x1234);
-        cpu.exec_instruction(Instruction::BNE {
-            rs1: 1,
-            rs2: 2,
-            imm: 0x1000,
-        });
-        assert_eq!(cpu.pc, 4);
-        cpu.regs.set(2, 0x1235);
-        cpu.exec_instruction(Instruction::BNE {
-            rs1: 1,
-            rs2: 2,
-            imm: 0x1000,
-        });
-        assert_eq!(cpu.pc, 0x1004);
-    }
-
-    #[test]
-    fn test_blt() {
-        let data = vec![
-            (0x1234, 0x1235, true),
-            (0x1235, 0x1235, false),
-            (0x1236, 0x1235, false),
-            (u32::MAX, 0x1235, true),
-        ];
-
-        for (rs1, rs2, expected) in data {
-            let mut cpu = new_cpu();
-
-            cpu.pc = 8;
-            cpu.regs.set(1, rs1);
-            cpu.regs.set(2, rs2);
-            cpu.exec_instruction(Instruction::BLT {
-                rs1: 1,
-                rs2: 2,
-                imm: 0x1000,
-            });
-            assert_eq!(
-                cpu.pc,
-                if expected { 0x1008 } else { 12 },
-                "rs1: {}, rs2: {}, should've jumped: {}",
-                rs1,
-                rs2,
-                expected
-            );
-        }
-    }
-
-    #[test]
-    fn test_bge() {
-        let data = vec![
-            (0x1234, 0x1235, false),
-            (0x1235, 0x1235, true),
-            (0x1236, 0x1235, true),
-            (u32::MAX, 0x1235, false),
-        ];
-
-        for (rs1, rs2, expected) in data {
-            let mut cpu = new_cpu();
-
-            cpu.pc = 8;
-            cpu.regs.set(1, rs1);
-            cpu.regs.set(2, rs2);
-            cpu.exec_instruction(Instruction::BGE {
-                rs1: 1,
-                rs2: 2,
-                imm: 0x1000,
-            });
-            assert_eq!(
-                cpu.pc,
-                if expected { 0x1008 } else { 12 },
-                "rs1: {}, rs2: {}, should've jumped: {}",
-                rs1,
-                rs2,
-                expected
-            );
-        }
-    }
-
-    #[test]
-    fn test_bltu() {
-        let data = vec![
-            (0x1234, 0x1235, true),
-            (0x1235, 0x1235, false),
-            (0x1236, 0x1235, false),
-            (u32::MAX, 0x1235, false),
-        ];
-
-        for (rs1, rs2, expected) in data {
-            let mut cpu = new_cpu();
-
-            cpu.pc = 8;
-            cpu.regs.set(1, rs1);
-            cpu.regs.set(2, rs2);
-            cpu.exec_instruction(Instruction::BLTU {
-                rs1: 1,
-                rs2: 2,
-                imm: 0x1000,
-            });
-            assert_eq!(
-                cpu.pc,
-                if expected { 0x1008 } else { 12 },
-                "rs1: {}, rs2: {}, should've jumped: {}",
-                rs1,
-                rs2,
-                expected
-            );
-        }
-    }
-
-    #[test]
-    fn test_bgeu() {
-        let data = vec![
-            (0x1234, 0x1235, false),
-            (0x1235, 0x1235, true),
-            (0x1236, 0x1235, true),
-            (u32::MAX, 0x1235, true),
-        ];
-
-        for (rs1, rs2, expected) in data {
-            let mut cpu = new_cpu();
-
-            cpu.pc = 8;
-            cpu.regs.set(1, rs1);
-            cpu.regs.set(2, rs2);
-            cpu.exec_instruction(Instruction::BGEU {
-                rs1: 1,
-                rs2: 2,
-                imm: 0x1000,
-            });
-            assert_eq!(
-                cpu.pc,
-                if expected { 0x1008 } else { 12 },
-                "rs1: {}, rs2: {}, should've jumped: {}",
-                rs1,
-                rs2,
-                expected
-            );
-        }
-    }
-
-
-    #[test]
     fn test_all_alu_imm() {
-        let mut cpu = new_cpu().cpu;
-
+        let mut cpu = new_panic_io_cpu();
         cpu.exec_instruction(0x00700293.try_into().unwrap()); // addi  x5,  zero, 7
         assert_eq!(cpu.regs.get(5), 7);
         cpu.exec_instruction(0x0052f393.try_into().unwrap()); // andi  x7,  x5, 5
@@ -813,7 +306,7 @@ mod tests {
 
     #[test]
     fn test_srli_sali() {
-        let mut cpu = new_cpu();
+        let mut cpu = new_panic_io_cpu();
 
         cpu.exec_instruction(0xfff00093.try_into().unwrap()); // li x1, -1
         cpu.exec_instruction(0x0020d113.try_into().unwrap()); // srli  x2, x1, 2
@@ -824,7 +317,7 @@ mod tests {
 
     #[test]
     fn test_slti_sltiu() {
-        let mut cpu = new_cpu();
+        let mut cpu = new_panic_io_cpu();
 
         cpu.exec_instruction(0xfff00093.try_into().unwrap()); // li x1, -1
         cpu.exec_instruction(0x0000a113.try_into().unwrap()); // slti x2, x1, 0
@@ -833,4 +326,39 @@ mod tests {
         assert_eq!(cpu.regs.get(3), 0);
     }
 
+    #[test]
+    fn test_load_and_save() {
+        let sdram = io::SDRam::new();
+        let mut cpu = Cpu::new_with_bus(sdram);
+
+        cpu.exec_instruction(0x361880b7.try_into().unwrap()); // lui x1, 0x36188
+        cpu.exec_instruction(0x71908093.try_into().unwrap()); // addi x1, x1, 1817 # 0x36188719
+        assert_eq!(cpu.regs.get(1), 0x36188719);
+        cpu.exec_instruction(0x00102023.try_into().unwrap()); // sw x1, 0(x0)
+        assert_eq!(cpu.bus.load_word(0).unwrap(), 0x36188719);
+        cpu.exec_instruction(0x00000103.try_into().unwrap()); // lb x2, 0(x0)
+        assert_eq!(cpu.regs.get(2), 0x19);
+        cpu.exec_instruction(0x00100103.try_into().unwrap()); // lb x2, 1(x0)
+        assert_eq!(cpu.regs.get(2), (-121i32) as u32);
+        cpu.exec_instruction(0x00200103.try_into().unwrap()); // lb x2, 2(x0)
+        assert_eq!(cpu.regs.get(2), 0x18);
+        cpu.exec_instruction(0x00300103.try_into().unwrap()); // lb x2, 3(x0)
+        assert_eq!(cpu.regs.get(2), 0x36);
+        cpu.exec_instruction(0x00001103.try_into().unwrap()); // lh x2, 0(x0)
+        assert_eq!(cpu.regs.get(2), (-30951i32) as u32);
+        cpu.exec_instruction(0x00101103.try_into().unwrap()); // lh x2, 1(x0)
+        assert_eq!(cpu.regs.get(2), 0x1887);
+        cpu.exec_instruction(0x00004103.try_into().unwrap()); // lbu x2, 0(x0)
+        assert_eq!(cpu.regs.get(2), 0x19);
+        cpu.exec_instruction(0x00104103.try_into().unwrap()); // lbu x2, 1(x0)
+        assert_eq!(cpu.regs.get(2), 0x87);
+        cpu.exec_instruction(0x00204103.try_into().unwrap()); // lbu x2, 2(x0)
+        assert_eq!(cpu.regs.get(2), 0x18);
+        cpu.exec_instruction(0x00304103.try_into().unwrap()); // lbu x2, 3(x0)
+        assert_eq!(cpu.regs.get(2), 0x36);
+        cpu.exec_instruction(0x00005103.try_into().unwrap()); // lhu x2, 0(x0)
+        assert_eq!(cpu.regs.get(2), 0x8719);
+        cpu.exec_instruction(0x00105103.try_into().unwrap()); // lhu x2, 1(x0)
+        assert_eq!(cpu.regs.get(2), 0x1887);
+    }
 }

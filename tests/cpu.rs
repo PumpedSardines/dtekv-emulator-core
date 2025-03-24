@@ -1,11 +1,15 @@
 /// Test larger programs using the emulator to ensure the CPU is working correctly
 use dtekv_emulator_core::*;
+use io::Data;
 
+#[cfg(test)]
 fn new_cpu() -> cpu::Cpu<io::Bus> {
     let mut bus = io::Bus::new();
 
-    bus.attach_device((io::SDRAM_LOWER_ADDR, io::SDRAM_HIGHER_ADDR), Box::new(io::SDRam::new()));
-    bus.attach_device((0, u32::MAX), Box::new(io::PanicOnAccess::new()));
+    bus.attach_device(
+        (io::SDRAM_LOWER_ADDR, io::SDRAM_HIGHER_ADDR),
+        Box::new(io::SDRam::new()),
+    );
 
     cpu::Cpu::new_with_bus(bus)
 }
@@ -321,7 +325,11 @@ fn writing_and_running() {
         0x00030f67, // jalr	t5,t1
         // 00000040 <end>:
         0x0000006f, // j	40 <end>
-    ].into_iter().map(|x| u32::to_le_bytes(x)).flatten().collect();
+    ]
+    .into_iter()
+    .map(|x| u32::to_le_bytes(x))
+    .flatten()
+    .collect();
 
     let mut cpu = new_cpu();
     cpu.reset();

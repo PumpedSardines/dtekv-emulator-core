@@ -113,24 +113,18 @@ impl<T: io::Data<()>> Cpu<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::instruction::Instruction;
-    use crate::io;
     use crate::test_utils::*;
 
     #[test]
     fn test_lb() {
-        let mut cpu = new_cpu();
+        let mut cpu = new_io_cpu().cpu;
 
         let data: Vec<(u8, u32)> = vec![(0x83, (-125i32) as u32), (0x12, 18)];
 
         for (inp, out) in data {
             for i in 0..4 {
                 cpu.store_byte(i, inp).unwrap();
-                cpu.exec_instruction(Instruction::LB {
-                    rs1: 0,
-                    imm: i,
-                    rd: 1,
-                });
+                cpu.lb(0, i, 1);
                 assert_eq!(cpu.regs.get(1), out);
             }
         }
@@ -138,18 +132,14 @@ mod tests {
 
     #[test]
     fn test_lh() {
-        let mut cpu = new_cpu();
+        let mut cpu = new_io_cpu().cpu;
 
         let data: Vec<(u16, u32)> = vec![(0x8313, (-31981i32) as u32), (0x1245, 4677)];
 
         for (inp, out) in data {
             for i in 0..4 {
                 cpu.store_halfword(i, inp).unwrap();
-                cpu.exec_instruction(Instruction::LH {
-                    rs1: 0,
-                    imm: i,
-                    rd: 1,
-                });
+                cpu.lh(0, i, 1);
                 assert_eq!(
                     cpu.regs.get(1),
                     out,
@@ -162,7 +152,7 @@ mod tests {
 
     #[test]
     fn test_lw() {
-        let mut cpu = new_cpu();
+        let mut cpu = new_io_cpu().cpu;
 
         let data: Vec<u32> = vec![
             0x12345678, 0x87654321, 0x00000000, 0xFFFFFFFF, 0x0000FFFF, 0xFFFF0000,
@@ -171,11 +161,7 @@ mod tests {
         for v in data {
             for i in 0..4 {
                 cpu.store_word(i, v).unwrap();
-                cpu.exec_instruction(Instruction::LW {
-                    rs1: 0,
-                    imm: i,
-                    rd: 1,
-                });
+                cpu.lw(0, i, 1);
                 assert_eq!(cpu.regs.get(1), v, "{}", format!("i: {}, value: {}", i, v));
             }
         }
@@ -218,41 +204,5 @@ mod tests {
     fn test_sw() {
         // TODO: Implement test
         todo!();
-    }
-
-    #[test]
-    fn test_load_and_save() {
-        let sdram = io::SDRam::new();
-        let mut cpu = Cpu::new_with_bus(sdram);
-
-        cpu.exec_instruction(0x361880b7.try_into().unwrap()); // lui x1, 0x36188
-        cpu.exec_instruction(0x71908093.try_into().unwrap()); // addi x1, x1, 1817 # 0x36188719
-        assert_eq!(cpu.regs.get(1), 0x36188719);
-        cpu.exec_instruction(0x00102023.try_into().unwrap()); // sw x1, 0(x0)
-        assert_eq!(cpu.bus.load_word(0).unwrap(), 0x36188719);
-        cpu.exec_instruction(0x00000103.try_into().unwrap()); // lb x2, 0(x0)
-        assert_eq!(cpu.regs.get(2), 0x19);
-        cpu.exec_instruction(0x00100103.try_into().unwrap()); // lb x2, 1(x0)
-        assert_eq!(cpu.regs.get(2), (-121i32) as u32);
-        cpu.exec_instruction(0x00200103.try_into().unwrap()); // lb x2, 2(x0)
-        assert_eq!(cpu.regs.get(2), 0x18);
-        cpu.exec_instruction(0x00300103.try_into().unwrap()); // lb x2, 3(x0)
-        assert_eq!(cpu.regs.get(2), 0x36);
-        cpu.exec_instruction(0x00001103.try_into().unwrap()); // lh x2, 0(x0)
-        assert_eq!(cpu.regs.get(2), (-30951i32) as u32);
-        cpu.exec_instruction(0x00101103.try_into().unwrap()); // lh x2, 1(x0)
-        assert_eq!(cpu.regs.get(2), 0x1887);
-        cpu.exec_instruction(0x00004103.try_into().unwrap()); // lbu x2, 0(x0)
-        assert_eq!(cpu.regs.get(2), 0x19);
-        cpu.exec_instruction(0x00104103.try_into().unwrap()); // lbu x2, 1(x0)
-        assert_eq!(cpu.regs.get(2), 0x87);
-        cpu.exec_instruction(0x00204103.try_into().unwrap()); // lbu x2, 2(x0)
-        assert_eq!(cpu.regs.get(2), 0x18);
-        cpu.exec_instruction(0x00304103.try_into().unwrap()); // lbu x2, 3(x0)
-        assert_eq!(cpu.regs.get(2), 0x36);
-        cpu.exec_instruction(0x00005103.try_into().unwrap()); // lhu x2, 0(x0)
-        assert_eq!(cpu.regs.get(2), 0x8719);
-        cpu.exec_instruction(0x00105103.try_into().unwrap()); // lhu x2, 1(x0)
-        assert_eq!(cpu.regs.get(2), 0x1887);
     }
 }

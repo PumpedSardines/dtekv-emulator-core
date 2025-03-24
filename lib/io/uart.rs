@@ -1,4 +1,4 @@
-use crate::{io};
+use crate::io;
 use std::collections::LinkedList;
 
 pub const UART_LOWER_ADDR: u32 = 0x04000040;
@@ -27,11 +27,7 @@ impl UART {
 
 impl io::Device<()> for UART {}
 
-impl io::Interruptable for UART {
-    fn interrupt(&self) -> Option<u32> {
-        None
-    }
-}
+impl io::Interruptable for UART {}
 
 impl Default for UART {
     fn default() -> Self {
