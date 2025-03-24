@@ -54,13 +54,13 @@ pub fn csr_to_str(csr: u32) -> Option<&'static str> {
 }
 
 #[derive(Clone)]
-pub struct Csr {
+pub struct CSR {
     pub csrs: [u32; 4096],
 }
 
-impl Csr {
+impl CSR {
     pub fn new() -> Self {
-        Csr { csrs: [0; 4096] }
+        CSR { csrs: [0; 4096] }
     }
 
     pub fn reset(&mut self) {
@@ -121,7 +121,7 @@ impl Csr {
 }
 
 
-impl std::fmt::Debug for Csr {
+impl std::fmt::Debug for CSR {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "Csr {{ ... }}")
     }

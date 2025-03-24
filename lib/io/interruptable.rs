@@ -3,7 +3,9 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 pub trait Interruptable {
-    fn interrupt(&self) -> Option<u32>;
+    fn interrupt(&self) -> Option<u32> {
+        None
+    }
 }
 
 impl<K> io::Interruptable for Rc<RefCell<K>>

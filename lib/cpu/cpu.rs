@@ -1,7 +1,7 @@
 #[cfg(feature = "debug-console")]
 use crate::debug_console::DebugConsole;
 use crate::{
-    cpu::{self, CSR, Regs},
+    cpu::{self, csr, CSR, Regs},
     exception,
     instruction::Instruction,
     io,
@@ -189,22 +189,22 @@ impl<T: io::Data<()>> Cpu<T> {
 
         let exception_pc = self.pc.wrapping_sub(4);
         self.pc = 0;
-        self.csr.store(cpu::MEPC, exception_pc);
-        self.csr.store(cpu::MCAUSE, cause);
+        self.csr.store(csr::MEPC, exception_pc);
+        self.csr.store(csr::MCAUSE, cause);
         self.csr.set_mstatus_mpie(self.csr.get_mstatus_mie());
         self.csr.set_mstatus_mie(false);
 
         if cause & 0x80000000 != 0 {
             // When it's an external interrupt, we need to increment the MEPC by 4
-            let exception_pc = self.csr.load(cpu::MEPC);
+            let exception_pc = self.csr.load(csr::MEPC);
             let exception_pc = exception_pc.wrapping_add(4);
-            self.csr.store(cpu::MEPC, exception_pc);
+            self.csr.store(csr::MEPC, exception_pc);
         }
     }
 
     /// Sends an external interrupt to the CPU
     pub fn external_interrupt(&mut self, cause: u32) {
-        if self.csr.load(cpu::MIE) & (1 << cause) == 0 {
+        if self.csr.load(csr::MIE) & (1 << cause) == 0 {
             // This interrupt is disabled
             return;
         }
