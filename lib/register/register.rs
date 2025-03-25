@@ -7,10 +7,10 @@ const MAX_REG: u32 = 31;
 impl Register {
     /// Creates a new Register, only if the given register is a valid reg
     pub fn new(reg: u32) -> Option<Register> {
-        if reg > MAX_REG || reg < MIN_REG {
-            return None;
-        } else {
+        if (MIN_REG..=MAX_REG).contains(&reg) {
             Some(unsafe { Register::new_unchecked(reg as u8) })
+        } else {
+            None
         }
     }
 

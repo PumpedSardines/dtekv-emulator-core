@@ -1,11 +1,13 @@
 use crate::{
     cpu::Cpu,
+    instruction::{ITypeImm, STypeImm},
     io::{self, Data},
     register::Register,
 };
 
 impl<T: io::Data<()>> Cpu<T> {
-    pub(crate) fn lb(&mut self, rs1: Register, imm: u32, rd: Register) {
+    pub(crate) fn lb(&mut self, rs1: Register, imm: ITypeImm, rd: Register) {
+        let imm = imm.as_u32();
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
 
@@ -19,7 +21,8 @@ impl<T: io::Data<()>> Cpu<T> {
         self.pc += 4;
     }
 
-    pub(crate) fn lh(&mut self, rs1: Register, imm: u32, rd: Register) {
+    pub(crate) fn lh(&mut self, rs1: Register, imm: ITypeImm, rd: Register) {
+        let imm = imm.as_u32();
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
 
@@ -33,7 +36,8 @@ impl<T: io::Data<()>> Cpu<T> {
         self.pc += 4;
     }
 
-    pub(crate) fn lw(&mut self, rs1: Register, imm: u32, rd: Register) {
+    pub(crate) fn lw(&mut self, rs1: Register, imm: ITypeImm, rd: Register) {
+        let imm = imm.as_u32();
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
         let word = self.load_word(addr).unwrap_or_else(|_| {
@@ -46,7 +50,8 @@ impl<T: io::Data<()>> Cpu<T> {
         self.pc += 4;
     }
 
-    pub(crate) fn lbu(&mut self, rs1: Register, imm: u32, rd: Register) {
+    pub(crate) fn lbu(&mut self, rs1: Register, imm: ITypeImm, rd: Register) {
+        let imm = imm.as_u32();
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
 
@@ -60,7 +65,8 @@ impl<T: io::Data<()>> Cpu<T> {
         self.pc += 4;
     }
 
-    pub(crate) fn lhu(&mut self, rs1: Register, imm: u32, rd: Register) {
+    pub(crate) fn lhu(&mut self, rs1: Register, imm: ITypeImm, rd: Register) {
+        let imm = imm.as_u32();
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
 
@@ -74,7 +80,8 @@ impl<T: io::Data<()>> Cpu<T> {
         self.pc += 4;
     }
 
-    pub(crate) fn sb(&mut self, rs1: Register, rs2: Register, imm: u32) {
+    pub(crate) fn sb(&mut self, rs1: Register, rs2: Register, imm: STypeImm) {
+        let imm = imm.as_u32();
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
@@ -87,7 +94,8 @@ impl<T: io::Data<()>> Cpu<T> {
         self.pc += 4;
     }
 
-    pub(crate) fn sh(&mut self, rs1: Register, rs2: Register, imm: u32) {
+    pub(crate) fn sh(&mut self, rs1: Register, rs2: Register, imm: STypeImm) {
+        let imm = imm.as_u32();
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
@@ -100,7 +108,8 @@ impl<T: io::Data<()>> Cpu<T> {
         self.pc += 4;
     }
 
-    pub(crate) fn sw(&mut self, rs1: Register, rs2: Register, imm: u32) {
+    pub(crate) fn sw(&mut self, rs1: Register, rs2: Register, imm: STypeImm) {
+        let imm = imm.as_u32();
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
@@ -118,6 +127,14 @@ impl<T: io::Data<()>> Cpu<T> {
 mod tests {
     use super::*;
     use crate::test_utils::*;
+    use test_case::test_case;
+
+    /// Helper to create imm value without the boilerplate
+    macro_rules! imm {
+        ($v:expr) => {
+            $v.try_into().unwrap()
+        };
+    }
 
     #[test]
     fn test_lb() {
@@ -128,7 +145,7 @@ mod tests {
         for (inp, out) in data {
             for i in 0..4 {
                 cpu.store_byte(i, inp).unwrap();
-                cpu.lb(Register::ZERO, i, Register::RA);
+                cpu.lb(Register::ZERO, imm!(i), Register::RA);
                 assert_eq!(cpu.regs.get(Register::RA), out);
             }
         }
@@ -143,7 +160,7 @@ mod tests {
         for (inp, out) in data {
             for i in 0..4 {
                 cpu.store_halfword(i, inp).unwrap();
-                cpu.lh(Register::ZERO, i, Register::RA);
+                cpu.lh(Register::ZERO, imm!(i), Register::RA);
                 assert_eq!(
                     cpu.regs.get(Register::RA),
                     out,
@@ -165,7 +182,7 @@ mod tests {
         for v in data {
             for i in 0..4 {
                 cpu.store_word(i, v).unwrap();
-                cpu.lw(Register::ZERO, i, Register::RA);
+                cpu.lw(Register::ZERO, imm!(i), Register::RA);
                 assert_eq!(
                     cpu.regs.get(Register::RA),
                     v,
@@ -185,7 +202,7 @@ mod tests {
         for (inp, out) in data {
             for i in 0..4 {
                 cpu.store_byte(i, inp).unwrap();
-                cpu.lbu(Register::ZERO, i, Register::RA);
+                cpu.lbu(Register::ZERO, imm!(i), Register::RA);
                 assert_eq!(cpu.regs.get(Register::RA), out);
             }
         }
@@ -193,25 +210,99 @@ mod tests {
 
     #[test]
     fn test_lhu() {
-        // TODO: Implement test
-        todo!();
+        let mut cpu = new_io_cpu().cpu;
+
+        let data: Vec<(u16, u32)> = vec![(0x8313, 0x8313), (0x1245, 4677)];
+
+        for (inp, out) in data {
+            for i in 0..4 {
+                cpu.store_halfword(i, inp).unwrap();
+                cpu.lhu(Register::ZERO, imm!(i), Register::RA);
+                assert_eq!(
+                    cpu.regs.get(Register::RA),
+                    out,
+                    "{}",
+                    format!("i: {}, inp: {}, out: {}", i, inp, out)
+                );
+            }
+        }
     }
 
-    #[test]
-    fn test_sb() {
-        // TODO: Implement test
-        todo!();
+    struct SbTestData {
+        rs1: u32,
+        offset: u32,
+        value: u8,
+        exp_addr: u32,
+    }
+    #[test_case(SbTestData { rs1: 0, offset: 0, value: 0xf3, exp_addr: 0 } => 0xf3; "store byte")]
+    #[test_case(SbTestData { rs1: 0x40, offset: 0, value: 0xf3, exp_addr: 0x40 } => 0xf3; "byte at reg addr")]
+    #[test_case(SbTestData { rs1: 0, offset: 0x30, value: 0xf3, exp_addr: 0x30 } => 0xf3; "byte at offset addr")]
+    #[test_case(SbTestData { rs1: 0x40, offset: 0x30, value: 0xf3, exp_addr: 0x70 } => 0xf3; "byte at reg addr and offset addr")]
+    #[test_case(SbTestData { rs1: 0x1, offset: 0x0, value: 0xf3, exp_addr: 0x1 } => 0xf3; "unaligned addr")]
+    fn sb(data: SbTestData) -> u8 {
+        let mut s = new_io_cpu();
+        let cpu = &mut s.cpu;
+        let sdram = &mut s.sdram;
+
+        cpu.regs.set(Register::T0, data.rs1);
+        cpu.regs.set(Register::T1, data.value as u32);
+        cpu.sb(
+            Register::T0,
+            Register::T1,
+            STypeImm::new(data.offset).unwrap(),
+        );
+        sdram.load_byte(data.exp_addr).unwrap()
     }
 
-    #[test]
-    fn test_sh() {
-        // TODO: Implement test
-        todo!();
+    struct ShTestData {
+        rs1: u32,
+        offset: u32,
+        value: u16,
+        exp_addr: u32,
+    }
+    #[test_case(ShTestData { rs1: 0, offset: 0, value: 0xf3, exp_addr: 0 } => 0xf3; "store byte")]
+    #[test_case(ShTestData { rs1: 0x40, offset: 0, value: 0xFFF3, exp_addr: 0x40 } => 0xFFF3; "byte at reg addr")]
+    #[test_case(ShTestData { rs1: 0, offset: 0x30, value: 0xf3, exp_addr: 0x30 } => 0xf3; "byte at offset addr")]
+    #[test_case(ShTestData { rs1: 0x40, offset: 0x30, value: 0xf3, exp_addr: 0x70 } => 0xf3; "byte at reg addr and offset addr")]
+    #[test_case(ShTestData { rs1: 0x1, offset: 0x0, value: 0xf3, exp_addr: 0x1 } => 0xf3; "unaligned addr")]
+    fn sh(data: ShTestData) -> u16 {
+        let mut s = new_io_cpu();
+        let cpu = &mut s.cpu;
+        let sdram = &mut s.sdram;
+
+        cpu.regs.set(Register::T0, data.rs1);
+        cpu.regs.set(Register::T1, data.value as u32);
+        cpu.sh(
+            Register::T0,
+            Register::T1,
+            STypeImm::new(data.offset).unwrap(),
+        );
+        sdram.load_halfword(data.exp_addr).unwrap()
     }
 
-    #[test]
-    fn test_sw() {
-        // TODO: Implement test
-        todo!();
+    struct SwTestData {
+        rs1: u32,
+        offset: u32,
+        value: u32,
+        exp_addr: u32,
+    }
+    #[test_case(SwTestData { rs1: 0, offset: 0, value: 0xf3, exp_addr: 0 } => 0xf3; "store byte")]
+    #[test_case(SwTestData { rs1: 0x40, offset: 0, value: 0xFFF3, exp_addr: 0x40 } => 0xFFF3; "byte at reg addr")]
+    #[test_case(SwTestData { rs1: 0, offset: 0x30, value: 0xf3, exp_addr: 0x30 } => 0xf3; "byte at offset addr")]
+    #[test_case(SwTestData { rs1: 0x40, offset: 0x30, value: 0xf3, exp_addr: 0x70 } => 0xf3; "byte at reg addr and offset addr")]
+    #[test_case(SwTestData { rs1: 0x1, offset: 0x0, value: 0xFFFF_FFFF, exp_addr: 0x1 } => 0xFFFF_FFFF; "unaligned addr")]
+    fn sw(data: SwTestData) -> u32 {
+        let mut s = new_io_cpu();
+        let cpu = &mut s.cpu;
+        let sdram = &mut s.sdram;
+
+        cpu.regs.set(Register::T0, data.rs1);
+        cpu.regs.set(Register::T1, data.value as u32);
+        cpu.sw(
+            Register::T0,
+            Register::T1,
+            STypeImm::new(data.offset).unwrap(),
+        );
+        sdram.load_word(data.exp_addr).unwrap()
     }
 }

@@ -1,22 +1,29 @@
-use crate::{cpu::Cpu, io, register::Register};
+use crate::{
+    cpu::Cpu,
+    instruction::{ITypeImm, JTypeImm, UTypeImm},
+    io,
+    register::Register,
+};
 
 impl<T: io::Data<()>> Cpu<T> {
-    pub(crate) fn lui(&mut self, imm: u32, rd: Register) {
-        self.regs.set(rd, imm);
+    pub(crate) fn lui(&mut self, imm: UTypeImm, rd: Register) {
+        self.regs.set(rd, imm.as_u32());
         self.pc += 4;
     }
 
-    pub(crate) fn auipc(&mut self, imm: u32, rd: Register) {
-        self.regs.set(rd, self.pc.wrapping_add(imm));
+    pub(crate) fn auipc(&mut self, imm: UTypeImm, rd: Register) {
+        self.regs.set(rd, self.pc.wrapping_add(imm.as_u32()));
         self.pc += 4;
     }
 
-    pub(crate) fn jal(&mut self, imm: u32, rd: Register) {
+    pub(crate) fn jal(&mut self, imm: JTypeImm, rd: Register) {
+        let imm = imm.as_u32();
         self.regs.set(rd, self.pc + 4);
         self.pc = self.pc.wrapping_add(imm);
     }
 
-    pub(crate) fn jalr(&mut self, rs1: Register, imm: u32, rd: Register) {
+    pub(crate) fn jalr(&mut self, rs1: Register, imm: ITypeImm, rd: Register) {
+        let imm = imm.as_u32();
         let rs1 = self.regs.get(rs1);
         self.regs.set(rd, self.pc + 4);
         self.pc = rs1.wrapping_add(imm);
@@ -25,6 +32,7 @@ impl<T: io::Data<()>> Cpu<T> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::{register::Register, test_utils::*};
 
     #[test]
@@ -33,11 +41,8 @@ mod tests {
 
         cpu.pc = 0;
 
-        // This seems weird but the imm value is calculated when parsing the instruction and not
-        // when the instruction is executed. That's why we check if the reg x1 is the same as we
-        // passed in
-        cpu.lui(0x12345, Register::T0);
-        assert_eq!(cpu.regs.get(Register::T0), 0x12345);
+        cpu.lui(UTypeImm::new(0x12345000).unwrap(), Register::T0);
+        assert_eq!(cpu.regs.get(Register::T0), 0x12345000);
         assert_eq!(cpu.pc, 4);
     }
 
@@ -46,7 +51,7 @@ mod tests {
         let mut cpu = new_panic_io_cpu();
 
         cpu.pc = 0x40000000;
-        cpu.auipc(0x3000000, Register::T0);
+        cpu.auipc(UTypeImm::new(0x3000000).unwrap(), Register::T0);
         assert_eq!(cpu.regs.get(Register::T0), 0x43000000);
         assert_eq!(cpu.pc, 0x40000004);
     }
@@ -56,7 +61,7 @@ mod tests {
         let mut cpu = new_panic_io_cpu();
 
         cpu.pc = 0x40000000;
-        cpu.jal(0x1000, Register::T0);
+        cpu.jal(JTypeImm::new(0x1000).unwrap(), Register::T0);
         assert_eq!(cpu.regs.get(Register::T0), 0x40000004);
         assert_eq!(cpu.pc, 0x40001000);
     }
@@ -67,8 +72,8 @@ mod tests {
 
         cpu.pc = 0x40000000;
         cpu.regs.set(Register::T2, 0x40000000);
-        cpu.jalr(Register::T2, 0x1000, Register::T1);
+        cpu.jalr(Register::T2, ITypeImm::new(0x100).unwrap(), Register::T1);
         assert_eq!(cpu.regs.get(Register::T1), 0x40000004);
-        assert_eq!(cpu.pc, 0x40001000);
+        assert_eq!(cpu.pc, 0x40000100);
     }
 }

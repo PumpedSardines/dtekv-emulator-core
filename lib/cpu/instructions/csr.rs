@@ -66,4 +66,6 @@ impl<T: io::Data<()>> Cpu<T> {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    // TODO: Add tests
+}

@@ -1,5 +1,7 @@
 use crate::{cpu::Cpu, io, register::Register};
 
+const XLEN_MASK: u32 = 0x1f;
+
 impl<T: io::Data<()>> Cpu<T> {
     pub(crate) fn add(&mut self, rs1: Register, rs2: Register, rd: Register) {
         let rs1 = self.regs.get(rs1);
@@ -32,21 +34,21 @@ impl<T: io::Data<()>> Cpu<T> {
 
     pub(crate) fn sll(&mut self, rs1: Register, rs2: Register, rd: Register) {
         let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2) & 0x1f;
-        self.regs.set(rd, rs1.wrapping_shl(rs2));
+        let rs2 = self.regs.get(rs2) & XLEN_MASK;
+        self.regs.set(rd, rs1 << rs2);
         self.pc += 4;
     }
 
     pub(crate) fn srl(&mut self, rs1: Register, rs2: Register, rd: Register) {
         let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2) & 0x1f;
+        let rs2 = self.regs.get(rs2) & XLEN_MASK;
         self.regs.set(rd, rs1.wrapping_shr(rs2));
         self.pc += 4;
     }
 
     pub(crate) fn sra(&mut self, rs1: Register, rs2: Register, rd: Register) {
         let rs1 = self.regs.get(rs1);
-        let rs2 = self.regs.get(rs2) & 0x1f;
+        let rs2 = self.regs.get(rs2) & XLEN_MASK;
         self.regs.set(rd, (rs1 as i32).wrapping_shr(rs2) as u32);
         self.pc += 4;
     }
@@ -77,6 +79,7 @@ impl<T: io::Data<()>> Cpu<T> {
 mod tests {
     use super::*;
     use crate::test_utils::*;
+    use test_case::test_case;
 
     #[test]
     fn test_add() {
@@ -119,48 +122,118 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_sub() {
-        todo!()
+    #[test_case(0x22, 0x11 => 0x11; "positive result")]
+    #[test_case(0x11, 0x22 => (-17i32) as u32; "negative result")]
+    #[test_case(10, (-10i32) as u32 => 20; "negative second operand")]
+    #[test_case(10, 0xFFFF_FFFF => 11; "overflow")]
+    fn test_sub(a: u32, b: u32) -> u32 {
+        let mut cpu = new_panic_io_cpu();
+        cpu.pc = 0;
+        cpu.regs.set(Register::T0, a);
+        cpu.regs.set(Register::T1, b);
+        cpu.sub(Register::T0, Register::T1, Register::T2);
+        assert_eq!(cpu.pc, 4);
+        cpu.regs.get(Register::T2)
     }
 
-    #[test]
-    fn test_slt() {
-        todo!()
+    #[test_case(0, 100 => 1; "operand is less")]
+    #[test_case(100, 0 => 0; "operand is greater")]
+    #[test_case((-100i32) as u32, 0 => 1; "negative less than")]
+    #[test_case(0, (-100i32) as u32 => 0; "negative greater than")]
+    fn test_slt(a: u32, b: u32) -> u32 {
+        let mut cpu = new_panic_io_cpu();
+        cpu.pc = 0;
+        cpu.regs.set(Register::T0, a);
+        cpu.regs.set(Register::T1, b);
+        cpu.slt(Register::T0, Register::T1, Register::T2);
+        assert_eq!(cpu.pc, 4);
+        cpu.regs.get(Register::T2)
     }
 
-    #[test]
-    fn test_sltu() {
-        todo!()
+    #[test_case(0, 100 => 1; "operand is less")]
+    #[test_case(100, 0 => 0; "operand is greater")]
+    #[test_case((-100i32) as u32, 0 => 0; "negative less than")]
+    #[test_case(0, (-100i32) as u32 => 1; "negative greater than")]
+    fn test_sltu(a: u32, b: u32) -> u32 {
+        let mut cpu = new_panic_io_cpu();
+        cpu.pc = 0;
+        cpu.regs.set(Register::T0, a);
+        cpu.regs.set(Register::T1, b);
+        cpu.sltu(Register::T0, Register::T1, Register::T2);
+        assert_eq!(cpu.pc, 4);
+        cpu.regs.get(Register::T2)
     }
 
-    #[test]
-    fn test_sll() {
-        todo!()
+    #[test_case(1, 3 => 0b1000; "regular")]
+    #[test_case(1, 400 => 65536; "overflow")]
+    fn test_sll(a: u32, b: u32) -> u32 {
+        let mut cpu = new_panic_io_cpu();
+        cpu.pc = 0;
+        cpu.regs.set(Register::T0, a);
+        cpu.regs.set(Register::T1, b);
+        cpu.sll(Register::T0, Register::T1, Register::T2);
+        assert_eq!(cpu.pc, 4);
+        cpu.regs.get(Register::T2)
     }
 
-    #[test]
-    fn test_srl() {
-        todo!()
+    #[test_case(0b1000, 3 => 1; "regular")]
+    #[test_case(0b1000, 0x103 => 1; "overflow 1")]
+    #[test_case(0b100000, 837 => 1; "overflow 2")]
+    #[test_case(0xFFFF_FFFF, 4 => 0x0FFF_FFFF; "negative")]
+    fn test_srl(a: u32, b: u32) -> u32 {
+        let mut cpu = new_panic_io_cpu();
+        cpu.pc = 0;
+        cpu.regs.set(Register::T0, a);
+        cpu.regs.set(Register::T1, b);
+        cpu.srl(Register::T0, Register::T1, Register::T2);
+        assert_eq!(cpu.pc, 4);
+        cpu.regs.get(Register::T2)
     }
 
-    #[test]
-    fn test_sra() {
-        todo!()
+    #[test_case(0b1000, 3 => 1; "regular")]
+    #[test_case(0b1000, 0x103 => 1; "overflow 1")]
+    #[test_case(0b100000, 837 => 1; "overflow 2")]
+    #[test_case(0xFFF3_FAFF, 4 => 0xFFFF_3FAF; "negative")]
+    fn test_sra(a: u32, b: u32) -> u32 {
+        let mut cpu = new_panic_io_cpu();
+        cpu.pc = 0;
+        cpu.regs.set(Register::T0, a);
+        cpu.regs.set(Register::T1, b);
+        cpu.sra(Register::T0, Register::T1, Register::T2);
+        assert_eq!(cpu.pc, 4);
+        cpu.regs.get(Register::T2)
     }
 
-    #[test]
-    fn test_and() {
-        todo!()
+    #[test_case(0xF67B615, 0x71625F => 0x612215; "regular")]
+    fn test_and(a: u32, b: u32) -> u32 {
+        let mut cpu = new_panic_io_cpu();
+        cpu.pc = 0;
+        cpu.regs.set(Register::T0, a);
+        cpu.regs.set(Register::T1, b);
+        cpu.and(Register::T0, Register::T1, Register::T2);
+        assert_eq!(cpu.pc, 4);
+        cpu.regs.get(Register::T2)
     }
 
-    #[test]
-    fn test_or() {
-        todo!()
+    #[test_case(0xF67B615, 0x71625F => 0xF77F65F; "regular")]
+    fn test_or(a: u32, b: u32) -> u32 {
+        let mut cpu = new_panic_io_cpu();
+        cpu.pc = 0;
+        cpu.regs.set(Register::T0, a);
+        cpu.regs.set(Register::T1, b);
+        cpu.or(Register::T0, Register::T1, Register::T2);
+        assert_eq!(cpu.pc, 4);
+        cpu.regs.get(Register::T2)
     }
 
-    #[test]
-    fn test_xor() {
-        todo!()
+    #[test_case(0xF67B615, 0x71625F => 0xF16D44A; "regular")]
+    fn test_xor(a: u32, b: u32) -> u32 {
+        let mut cpu = new_panic_io_cpu();
+        cpu.pc = 0;
+        cpu.regs.set(Register::T0, a);
+        cpu.regs.set(Register::T1, b);
+        cpu.xor(Register::T0, Register::T1, Register::T2);
+        assert_eq!(cpu.pc, 4);
+        cpu.regs.get(Register::T2)
     }
 }
