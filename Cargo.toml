@@ -12,8 +12,8 @@ default = ["debug-console"]
 debug-console = []
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
 
 [dev-dependencies]
 test-case = "*"
 
-[dependencies]
