@@ -1,56 +1,56 @@
-use crate::{cpu::Cpu, io};
+use crate::{cpu::Cpu, io, register::Register};
 
 impl<T: io::Data<()>> Cpu<T> {
-    pub(crate) fn addi(&mut self, rs1: u8, imm: u32, rd: u8) {
+    pub(crate) fn addi(&mut self, rs1: Register, imm: u32, rd: Register) {
         let rs1 = self.regs.get(rs1);
         self.regs.set(rd, rs1.wrapping_add(imm));
         self.pc += 4;
     }
 
-    pub(crate) fn andi(&mut self, rs1: u8, imm: u32, rd: u8) {
+    pub(crate) fn andi(&mut self, rs1: Register, imm: u32, rd: Register) {
         let rs1 = self.regs.get(rs1);
         self.regs.set(rd, rs1 & imm);
         self.pc += 4;
     }
 
-    pub(crate) fn ori(&mut self, rs1: u8, imm: u32, rd: u8) {
+    pub(crate) fn ori(&mut self, rs1: Register, imm: u32, rd: Register) {
         let rs1 = self.regs.get(rs1);
         self.regs.set(rd, rs1 | imm);
         self.pc += 4;
     }
 
-    pub(crate) fn xori(&mut self, rs1: u8, imm: u32, rd: u8) {
+    pub(crate) fn xori(&mut self, rs1: Register, imm: u32, rd: Register) {
         let rs1 = self.regs.get(rs1);
         self.regs.set(rd, rs1 ^ imm);
         self.pc += 4;
     }
 
-    pub(crate) fn slli(&mut self, rs1: u8, imm: u32, rd: u8) {
+    pub(crate) fn slli(&mut self, rs1: Register, imm: u32, rd: Register) {
         let rs1 = self.regs.get(rs1);
         self.regs.set(rd, rs1.wrapping_shl(imm));
         self.pc += 4;
     }
 
-    pub(crate) fn srli(&mut self, rs1: u8, imm: u32, rd: u8) {
+    pub(crate) fn srli(&mut self, rs1: Register, imm: u32, rd: Register) {
         let rs1 = self.regs.get(rs1);
         self.regs.set(rd, rs1.wrapping_shr(imm));
         self.pc += 4;
     }
 
-    pub(crate) fn srai(&mut self, rs1: u8, imm: u32, rd: u8) {
+    pub(crate) fn srai(&mut self, rs1: Register, imm: u32, rd: Register) {
         let rs1 = self.regs.get(rs1);
         self.regs.set(rd, (rs1 as i32).wrapping_shr(imm) as u32);
         self.pc += 4;
     }
 
-    pub(crate) fn slti(&mut self, rs1: u8, imm: u32, rd: u8) {
+    pub(crate) fn slti(&mut self, rs1: Register, imm: u32, rd: Register) {
         let rs1 = self.regs.get(rs1);
         self.regs
             .set(rd, if (rs1 as i32) < (imm as i32) { 1 } else { 0 });
         self.pc += 4;
     }
 
-    pub(crate) fn sltiu(&mut self, rs1: u8, imm: u32, rd: u8) {
+    pub(crate) fn sltiu(&mut self, rs1: Register, imm: u32, rd: Register) {
         let rs1 = self.regs.get(rs1);
         self.regs.set(rd, if rs1 < imm { 1 } else { 0 });
         self.pc += 4;
@@ -59,38 +59,38 @@ impl<T: io::Data<()>> Cpu<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_utils::*;
+    use crate::{register::Register, test_utils::*};
 
     #[test]
     fn test_addi() {
         struct AddiTestCase {
-            rs1: u8,
+            rs1: Register,
             rs1_value: u32,
             imm: u32,
-            rd: u8,
+            rd: Register,
             expected: u32,
         }
 
         let cases = vec![
             AddiTestCase {
-                rs1: 1,
+                rs1: Register::T1,
                 rs1_value: 5,
                 imm: 3,
-                rd: 2,
+                rd: Register::T2,
                 expected: 8,
             },
             AddiTestCase {
-                rs1: 1,
+                rs1: Register::T1,
                 rs1_value: 5,
                 imm: 0xffff_fffc,
-                rd: 2,
+                rd: Register::T1,
                 expected: 1,
             },
             AddiTestCase {
-                rs1: 1,
+                rs1: Register::S1,
                 rs1_value: 5,
                 imm: 0xffff_ffff,
-                rd: 2,
+                rd: Register::T6,
                 expected: 4,
             },
         ];
@@ -138,47 +138,47 @@ mod tests {
     #[test]
     fn test_slti() {
         struct SltiTestCase {
-            rs1: u8,
+            rs1: Register,
             rs1_value: u32,
             imm: u32,
-            rd: u8,
+            rd: Register,
             expected: u32,
         }
 
         let cases = vec![
             SltiTestCase {
-                rs1: 29,
+                rs1: Register::T0,
                 rs1_value: 0,
                 imm: 0,
-                rd: 28,
+                rd: Register::T1,
                 expected: 0,
             },
             SltiTestCase {
-                rs1: 26,
+                rs1: Register::A0,
                 rs1_value: 0,
                 imm: 1,
-                rd: 5,
+                rd: Register::T4,
                 expected: 1,
             },
             SltiTestCase {
-                rs1: 6,
+                rs1: Register::T1,
                 rs1_value: 1,
                 imm: 1,
-                rd: 6,
+                rd: Register::S3,
                 expected: 0,
             },
             SltiTestCase {
-                rs1: 8,
+                rs1: Register::S3,
                 rs1_value: 1,
                 imm: u32::MAX,
-                rd: 9,
+                rd: Register::RA,
                 expected: 0,
             },
             SltiTestCase {
-                rs1: 2,
+                rs1: Register::A0,
                 rs1_value: u32::MAX,
                 imm: 1,
-                rd: 4,
+                rd: Register::S1,
                 expected: 1,
             },
         ];
@@ -195,48 +195,49 @@ mod tests {
 
     #[test]
     fn test_sltiu() {
+        #[derive(Debug)]
         struct SltiuTestCase {
-            rs1: u8,
+            rs1: Register,
             rs1_value: u32,
             imm: u32,
-            rd: u8,
+            rd: Register,
             expected: u32,
         }
 
         let cases = vec![
             SltiuTestCase {
-                rs1: 29,
+                rs1: Register::T0,
                 rs1_value: 0,
                 imm: 0,
-                rd: 28,
+                rd: Register::T1,
                 expected: 0,
             },
-            SltiuTestCase {
-                rs1: 26,
+            SltiuTestCase  {
+                rs1: Register::A0,
                 rs1_value: 0,
                 imm: 1,
-                rd: 5,
+                rd: Register::T4,
                 expected: 1,
             },
             SltiuTestCase {
-                rs1: 6,
+                rs1: Register::T1,
                 rs1_value: 1,
                 imm: 1,
-                rd: 6,
+                rd: Register::S3,
                 expected: 0,
             },
             SltiuTestCase {
-                rs1: 8,
+                rs1: Register::S3,
                 rs1_value: 1,
                 imm: u32::MAX,
-                rd: 9,
+                rd: Register::RA,
                 expected: 1,
             },
             SltiuTestCase {
-                rs1: 2,
+                rs1: Register::A0,
                 rs1_value: u32::MAX,
                 imm: 1,
-                rd: 4,
+                rd: Register::S1,
                 expected: 0,
             },
         ];
@@ -246,7 +247,7 @@ mod tests {
             cpu.pc = 0;
             cpu.regs.set(case.rs1, case.rs1_value);
             cpu.sltiu(case.rs1, case.imm, case.rd);
-            assert_eq!(cpu.regs.get(case.rd), case.expected);
+            assert_eq!(cpu.regs.get(case.rd), case.expected, "{:?}", case);
             assert_eq!(cpu.pc, 4);
         }
     }

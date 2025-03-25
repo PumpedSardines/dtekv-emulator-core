@@ -1,7 +1,8 @@
-//! Module for the debug console.
-//! Generates warnings and errors that might occur during the execution of the emulator
+//! Debug Console, stores warnings and errors that might occur during the execution of the emulator
 
 use std::collections::LinkedList;
+
+use crate::csr::Csr;
 
 #[derive(Debug)]
 pub enum Entry {
@@ -19,7 +20,7 @@ impl Into<Entry> for Warning {
 #[derive(Debug)]
 pub enum Warning {
     /// When a CSR is accessed that is not used anywhere in the emulator
-    AccessUselessCsr { csr: u32, instr_addr: u32 },
+    AccessUselessCsr { csr: Csr, instr_addr: u32 },
     /// When an instruction is not implemented
     InstructionNotImplemented {
         instr: &'static str,
@@ -62,7 +63,7 @@ impl DebugConsole {
         return self.lines.is_empty();
     }
 
-    pub fn access_useless_csr(&mut self, csr: u32, instr_addr: u32) {
+    pub fn access_useless_csr(&mut self, csr: Csr, instr_addr: u32) {
         self.push(Warning::AccessUselessCsr { csr, instr_addr }.into());
     }
     pub fn illegal_instruction(&mut self, instr: u32, instr_addr: u32) {

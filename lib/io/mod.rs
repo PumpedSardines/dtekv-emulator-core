@@ -1,7 +1,4 @@
-//! Default implementation of different io devices
-//!
-//! You can make your own implementation if you need to, especially the vga buffer, timer and uart
-//! can be pretty platform specific
+//! IO devices
 
 mod data;
 pub use data::Data;

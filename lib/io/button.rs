@@ -1,4 +1,8 @@
-use crate::{exception, io, io::Data, utils};
+use crate::{
+    exception::Exception,
+    io::{self, Data},
+    utils,
+};
 
 #[derive(Clone)]
 pub struct Button {
@@ -41,9 +45,9 @@ impl Button {
 impl io::Device<()> for Button {}
 
 impl io::Interruptable for Button {
-    fn interrupt(&self) -> Option<u32> {
+    fn interrupt(&self) -> Option<Exception> {
         if self.should_interrupt() {
-            Some(exception::BUTTON_INTERRUPT)
+            Some(Exception::BUTTON_INTERRUPT)
         } else {
             None
         }

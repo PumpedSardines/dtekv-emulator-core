@@ -1,9 +1,9 @@
-//! You should probably not use the default bus implementation. It is very general purpose and is
-//! quite slow. You should implement your own bus for your specific needs. This is mostly here for
-//! completeness and for testing purposes.
 
-use crate::io::{self, Data, Device};
+use crate::{exception::Exception, io::{self, Data, Device}};
 
+/// You should probably not use the default bus implementation. It is very general purpose and is
+/// quite slow. You should implement your own bus for your specific needs. This is mostly here for
+/// completeness and for testing purposes.
 #[derive(Debug)]
 pub struct Bus {
     devices: Vec<((u32, u32), Box<dyn Device<()>>)>,
@@ -34,7 +34,7 @@ impl io::Device<()> for Bus {
 }
 
 impl io::Interruptable for Bus {
-    fn interrupt(&self) -> Option<u32> {
+    fn interrupt(&self) -> Option<Exception> {
         for (_, device) in &self.devices {
             if let Some(cause) = device.interrupt() {
                 return Some(cause);

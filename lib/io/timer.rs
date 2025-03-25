@@ -1,4 +1,4 @@
-use crate::{exception, io, cpu};
+use crate::{cpu, exception::Exception, io};
 use std::time::{Duration, Instant};
 
 pub const TIMER_LOWER_ADDR: u32 = 0x4000020;
@@ -14,7 +14,6 @@ pub struct Timer {
     period_duration: Duration,
     clock_start: Instant,
 }
-
 
 impl Default for Timer {
     fn default() -> Self {
@@ -67,9 +66,9 @@ impl io::Device<()> for Timer {
 }
 
 impl io::Interruptable for Timer {
-    fn interrupt(&self) -> Option<u32> {
+    fn interrupt(&self) -> Option<Exception> {
         if self.should_interrupt() {
-            Some(exception::TIMER_INTERRUPT)
+            Some(Exception::TIMER_INTERRUPT)
         } else {
             None
         }

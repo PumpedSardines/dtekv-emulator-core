@@ -4,6 +4,8 @@
 // best way to accomplish this functionality, and in a way the risc-v instructions are just a long
 // list of hardcoded values.
 
+use crate::{csr::Csr, register::Register};
+
 /// The RISC-V instruction types
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Format {
@@ -18,59 +20,260 @@ pub enum Format {
 /// The RISC-V instructions that are implemented
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Instruction {
-    LUI { rd: u8, imm: u32 },
-    AUIPC { rd: u8, imm: u32 },
-    JAL { rd: u8, imm: u32 },
-    JALR { rd: u8, rs1: u8, imm: u32 },
-    BEQ { rs1: u8, rs2: u8, imm: u32 },
-    BNE { rs1: u8, rs2: u8, imm: u32 },
-    BLT { rs1: u8, rs2: u8, imm: u32 },
-    BGE { rs1: u8, rs2: u8, imm: u32 },
-    BLTU { rs1: u8, rs2: u8, imm: u32 },
-    BGEU { rs1: u8, rs2: u8, imm: u32 },
-    LB { rd: u8, rs1: u8, imm: u32 },
-    LH { rd: u8, rs1: u8, imm: u32 },
-    LW { rd: u8, rs1: u8, imm: u32 },
-    LBU { rd: u8, rs1: u8, imm: u32 },
-    LHU { rd: u8, rs1: u8, imm: u32 },
-    SB { rs1: u8, rs2: u8, imm: u32 },
-    SH { rs1: u8, rs2: u8, imm: u32 },
-    SW { rs1: u8, rs2: u8, imm: u32 },
-    ADDI { rd: u8, rs1: u8, imm: u32 },
-    SLTI { rd: u8, rs1: u8, imm: u32 },
-    SLTIU { rd: u8, rs1: u8, imm: u32 },
-    XORI { rd: u8, rs1: u8, imm: u32 },
-    ORI { rd: u8, rs1: u8, imm: u32 },
-    ANDI { rd: u8, rs1: u8, imm: u32 },
-    SLLI { rd: u8, rs1: u8, imm: u32 },
-    SRLI { rd: u8, rs1: u8, imm: u32 },
-    SRAI { rd: u8, rs1: u8, imm: u32 },
-    ADD { rd: u8, rs1: u8, rs2: u8 },
-    SUB { rd: u8, rs1: u8, rs2: u8 },
-    SLL { rd: u8, rs1: u8, rs2: u8 },
-    SLT { rd: u8, rs1: u8, rs2: u8 },
-    SLTU { rd: u8, rs1: u8, rs2: u8 },
-    XOR { rd: u8, rs1: u8, rs2: u8 },
-    SRL { rd: u8, rs1: u8, rs2: u8 },
-    SRA { rd: u8, rs1: u8, rs2: u8 },
-    OR { rd: u8, rs1: u8, rs2: u8 },
-    AND { rd: u8, rs1: u8, rs2: u8 },
-    CSRRW { rd: u8, rs1: u8, imm: u32 },
-    CSRRS { rd: u8, rs1: u8, imm: u32 },
-    CSRRC { rd: u8, rs1: u8, imm: u32 },
-    CSRRWI { uimm: u8, rd: u8, imm: u32 },
-    CSRRSI { uimm: u8, rd: u8, imm: u32 },
-    CSRRCI { uimm: u8, rd: u8, imm: u32 },
+    LUI {
+        rd: Register,
+        imm: u32,
+    },
+    AUIPC {
+        rd: Register,
+        imm: u32,
+    },
+    JAL {
+        rd: Register,
+        imm: u32,
+    },
+    JALR {
+        rd: Register,
+        rs1: Register,
+        imm: u32,
+    },
+    BEQ {
+        rs1: Register,
+        rs2: Register,
+        imm: u32,
+    },
+    BNE {
+        rs1: Register,
+        rs2: Register,
+        imm: u32,
+    },
+    BLT {
+        rs1: Register,
+        rs2: Register,
+        imm: u32,
+    },
+    BGE {
+        rs1: Register,
+        rs2: Register,
+        imm: u32,
+    },
+    BLTU {
+        rs1: Register,
+        rs2: Register,
+        imm: u32,
+    },
+    BGEU {
+        rs1: Register,
+        rs2: Register,
+        imm: u32,
+    },
+    LB {
+        rd: Register,
+        rs1: Register,
+        imm: u32,
+    },
+    LH {
+        rd: Register,
+        rs1: Register,
+        imm: u32,
+    },
+    LW {
+        rd: Register,
+        rs1: Register,
+        imm: u32,
+    },
+    LBU {
+        rd: Register,
+        rs1: Register,
+        imm: u32,
+    },
+    LHU {
+        rd: Register,
+        rs1: Register,
+        imm: u32,
+    },
+    SB {
+        rs1: Register,
+        rs2: Register,
+        imm: u32,
+    },
+    SH {
+        rs1: Register,
+        rs2: Register,
+        imm: u32,
+    },
+    SW {
+        rs1: Register,
+        rs2: Register,
+        imm: u32,
+    },
+    ADDI {
+        rd: Register,
+        rs1: Register,
+        imm: u32,
+    },
+    SLTI {
+        rd: Register,
+        rs1: Register,
+        imm: u32,
+    },
+    SLTIU {
+        rd: Register,
+        rs1: Register,
+        imm: u32,
+    },
+    XORI {
+        rd: Register,
+        rs1: Register,
+        imm: u32,
+    },
+    ORI {
+        rd: Register,
+        rs1: Register,
+        imm: u32,
+    },
+    ANDI {
+        rd: Register,
+        rs1: Register,
+        imm: u32,
+    },
+    SLLI {
+        rd: Register,
+        rs1: Register,
+        imm: u32,
+    },
+    SRLI {
+        rd: Register,
+        rs1: Register,
+        imm: u32,
+    },
+    SRAI {
+        rd: Register,
+        rs1: Register,
+        imm: u32,
+    },
+    ADD {
+        rd: Register,
+        rs1: Register,
+        rs2: Register,
+    },
+    SUB {
+        rd: Register,
+        rs1: Register,
+        rs2: Register,
+    },
+    SLL {
+        rd: Register,
+        rs1: Register,
+        rs2: Register,
+    },
+    SLT {
+        rd: Register,
+        rs1: Register,
+        rs2: Register,
+    },
+    SLTU {
+        rd: Register,
+        rs1: Register,
+        rs2: Register,
+    },
+    XOR {
+        rd: Register,
+        rs1: Register,
+        rs2: Register,
+    },
+    SRL {
+        rd: Register,
+        rs1: Register,
+        rs2: Register,
+    },
+    SRA {
+        rd: Register,
+        rs1: Register,
+        rs2: Register,
+    },
+    OR {
+        rd: Register,
+        rs1: Register,
+        rs2: Register,
+    },
+    AND {
+        rd: Register,
+        rs1: Register,
+        rs2: Register,
+    },
+    CSRRW {
+        rd: Register,
+        rs1: Register,
+        csr: Csr,
+    },
+    CSRRS {
+        rd: Register,
+        rs1: Register,
+        csr: Csr,
+    },
+    CSRRC {
+        rd: Register,
+        rs1: Register,
+        csr: Csr,
+    },
+    CSRRWI {
+        imm: u32,
+        rd: Register,
+        csr: Csr,
+    },
+    CSRRSI {
+        imm: u32,
+        rd: Register,
+        csr: Csr,
+    },
+    CSRRCI {
+        imm: u32,
+        rd: Register,
+        csr: Csr,
+    },
     MRET,
     ECALL,
-    MUL { rd: u8, rs1: u8, rs2: u8 },
-    MULH { rd: u8, rs1: u8, rs2: u8 },
-    MULHSU { rd: u8, rs1: u8, rs2: u8 },
-    MULHU { rd: u8, rs1: u8, rs2: u8 },
-    DIV { rd: u8, rs1: u8, rs2: u8 },
-    DIVU { rd: u8, rs1: u8, rs2: u8 },
-    REM { rd: u8, rs1: u8, rs2: u8 },
-    REMU { rd: u8, rs1: u8, rs2: u8 },
+    MUL {
+        rd: Register,
+        rs1: Register,
+        rs2: Register,
+    },
+    MULH {
+        rd: Register,
+        rs1: Register,
+        rs2: Register,
+    },
+    MULHSU {
+        rd: Register,
+        rs1: Register,
+        rs2: Register,
+    },
+    MULHU {
+        rd: Register,
+        rs1: Register,
+        rs2: Register,
+    },
+    DIV {
+        rd: Register,
+        rs1: Register,
+        rs2: Register,
+    },
+    DIVU {
+        rd: Register,
+        rs1: Register,
+        rs2: Register,
+    },
+    REM {
+        rd: Register,
+        rs1: Register,
+        rs2: Register,
+    },
+    REMU {
+        rd: Register,
+        rs1: Register,
+        rs2: Register,
+    },
 }
 
 const LUI: u8 = 0b0110111;
@@ -261,17 +464,18 @@ impl TryFrom<u32> for Instruction {
                 (SLLI, FUNCT7_SLLI) => Ok(Instruction::SLLI {
                     rd,
                     rs1,
-                    imm: rs2 as u32,
+                    imm: rs2.into(),
                 }),
                 (SRLI_SRAI, FUNCT7_SRLI) => Ok(Instruction::SRLI {
                     rd,
                     rs1,
-                    imm: rs2 as u32,
+
+                    imm: rs2.into(),
                 }),
                 (SRLI_SRAI, FUNCT7_SRAI) => Ok(Instruction::SRAI {
                     rd,
                     rs1,
-                    imm: rs2 as u32,
+                    imm: rs2.into(),
                 }),
                 (ADDI, _) => Ok(Instruction::ADDI {
                     rd,
@@ -332,35 +536,36 @@ impl TryFrom<u32> for Instruction {
                     ECALL => Ok(Instruction::ECALL),
                     _ => Err(()),
                 },
+                // We can call expect here because we and with 0xFFF, so the value is always valid
                 CSRRW => Ok(Instruction::CSRRW {
                     rd,
                     rs1,
-                    imm: imm(raw, Format::I) & 0xFFF,
+                    csr: Csr::new(imm(raw, Format::I) & 0xFFF).expect("Invalid CSR"),
                 }),
                 CSRRS => Ok(Instruction::CSRRS {
                     rd,
                     rs1,
-                    imm: imm(raw, Format::I) & 0xFFF,
+                    csr: Csr::new(imm(raw, Format::I) & 0xFFF).expect("Invalid CSR"),
                 }),
                 CSRRC => Ok(Instruction::CSRRC {
                     rd,
                     rs1,
-                    imm: imm(raw, Format::I) & 0xFFF,
+                    csr: Csr::new(imm(raw, Format::I) & 0xFFF).expect("Invalid CSR"),
                 }),
                 CSRRWI => Ok(Instruction::CSRRWI {
-                    uimm: rs1,
+                    imm: rs1.into(),
                     rd,
-                    imm: imm(raw, Format::I) & 0xFFF,
+                    csr: Csr::new(imm(raw, Format::I) & 0xFFF).expect("Invalid CSR"),
                 }),
                 CSRRSI => Ok(Instruction::CSRRSI {
-                    uimm: rs1,
+                    imm: rs1.into(),
                     rd,
-                    imm: imm(raw, Format::I) & 0xFFF,
+                    csr: Csr::new(imm(raw, Format::I) & 0xFFF).expect("Invalid CSR"),
                 }),
                 CSRRCI => Ok(Instruction::CSRRCI {
-                    uimm: rs1,
+                    imm: rs1.into(),
                     rd,
-                    imm: imm(raw, Format::I) & 0xFFF,
+                    csr: Csr::new(imm(raw, Format::I) & 0xFFF).expect("Invalid CSR"),
                 }),
                 _ => Err(()),
             },
@@ -373,16 +578,16 @@ fn opcode(v: u32) -> u8 {
     (v & 0x7F) as u8
 }
 
-fn rs1(v: u32) -> u8 {
-    ((v >> 15) & 0x1F) as u8
+fn rs1(v: u32) -> Register {
+    Register::new((v >> 15) & 0x1F).expect("Passed something other than a value between 0 and 31")
 }
 
-fn rs2(v: u32) -> u8 {
-    ((v >> 20) & 0x1F) as u8
+fn rs2(v: u32) -> Register {
+    Register::new((v >> 20) & 0x1F).expect("Passed something other than a value between 0 and 31")
 }
 
-fn rd(v: u32) -> u8 {
-    ((v >> 7) & 0x1F) as u8
+fn rd(v: u32) -> Register {
+    Register::new((v >> 7) & 0x1F).expect("Passed something other than a value between 0 and 31")
 }
 
 fn funct3(v: u32) -> u8 {
@@ -394,6 +599,7 @@ fn funct7(v: u32) -> u8 {
 }
 
 fn imm(v: u32, format: Format) -> u32 {
+    // Since all of this are basically bit masks until we return, we do all of this
     match format {
         Format::I => ((v as i32) >> 20) as u32,
         Format::S => (((v as i32) >> 25) << 5) as u32 | ((v >> 7) & 0x1F),
@@ -422,9 +628,9 @@ mod tests {
     fn test_parse_csrrs() {
         let raw = 0xb80022f3;
         let instr = Instruction::CSRRS {
-            rd: 5,
-            rs1: 0,
-            imm: 0xB80,
+            rd: Register::T0,
+            rs1: Register::ZERO,
+            csr: Csr::MCYCLEH,
         };
         assert_eq!(Instruction::try_from(raw), Ok(instr));
     }

@@ -85,12 +85,7 @@ impl PanicOnAccess {
 }
 
 impl io::Device<()> for PanicOnAccess {}
-
-impl io::Interruptable for PanicOnAccess {
-    fn interrupt(&self) -> Option<u32> {
-        None
-    }
-}
+impl io::Interruptable for PanicOnAccess {}
 
 impl io::Data<()> for PanicOnAccess {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {

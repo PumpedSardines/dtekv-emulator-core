@@ -78,5 +78,5 @@ fn test_switch_display() {
     for _ in 0..10 {
         cpu.clock();
     }
-    assert_eq!(cpu.regs.get(5), 5);
+    assert_eq!(cpu.regs.get(register::Register::T0), 5);
 }

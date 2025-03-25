@@ -1,7 +1,11 @@
-use crate::{cpu::Cpu, io, io::Data};
+use crate::{
+    cpu::Cpu,
+    io::{self, Data},
+    register::Register,
+};
 
 impl<T: io::Data<()>> Cpu<T> {
-    pub(crate) fn lb(&mut self, rs1: u8, imm: u32, rd: u8) {
+    pub(crate) fn lb(&mut self, rs1: Register, imm: u32, rd: Register) {
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
 
@@ -15,7 +19,7 @@ impl<T: io::Data<()>> Cpu<T> {
         self.pc += 4;
     }
 
-    pub(crate) fn lh(&mut self, rs1: u8, imm: u32, rd: u8) {
+    pub(crate) fn lh(&mut self, rs1: Register, imm: u32, rd: Register) {
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
 
@@ -29,7 +33,7 @@ impl<T: io::Data<()>> Cpu<T> {
         self.pc += 4;
     }
 
-    pub(crate) fn lw(&mut self, rs1: u8, imm: u32, rd: u8) {
+    pub(crate) fn lw(&mut self, rs1: Register, imm: u32, rd: Register) {
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
         let word = self.load_word(addr).unwrap_or_else(|_| {
@@ -42,7 +46,7 @@ impl<T: io::Data<()>> Cpu<T> {
         self.pc += 4;
     }
 
-    pub(crate) fn lbu(&mut self, rs1: u8, imm: u32, rd: u8) {
+    pub(crate) fn lbu(&mut self, rs1: Register, imm: u32, rd: Register) {
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
 
@@ -56,7 +60,7 @@ impl<T: io::Data<()>> Cpu<T> {
         self.pc += 4;
     }
 
-    pub(crate) fn lhu(&mut self, rs1: u8, imm: u32, rd: u8) {
+    pub(crate) fn lhu(&mut self, rs1: Register, imm: u32, rd: Register) {
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
 
@@ -70,7 +74,7 @@ impl<T: io::Data<()>> Cpu<T> {
         self.pc += 4;
     }
 
-    pub(crate) fn sb(&mut self, rs1: u8, rs2: u8, imm: u32) {
+    pub(crate) fn sb(&mut self, rs1: Register, rs2: Register, imm: u32) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
@@ -83,7 +87,7 @@ impl<T: io::Data<()>> Cpu<T> {
         self.pc += 4;
     }
 
-    pub(crate) fn sh(&mut self, rs1: u8, rs2: u8, imm: u32) {
+    pub(crate) fn sh(&mut self, rs1: Register, rs2: Register, imm: u32) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
@@ -96,7 +100,7 @@ impl<T: io::Data<()>> Cpu<T> {
         self.pc += 4;
     }
 
-    pub(crate) fn sw(&mut self, rs1: u8, rs2: u8, imm: u32) {
+    pub(crate) fn sw(&mut self, rs1: Register, rs2: Register, imm: u32) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);
         let addr = rs1.wrapping_add(imm);
@@ -124,8 +128,8 @@ mod tests {
         for (inp, out) in data {
             for i in 0..4 {
                 cpu.store_byte(i, inp).unwrap();
-                cpu.lb(0, i, 1);
-                assert_eq!(cpu.regs.get(1), out);
+                cpu.lb(Register::ZERO, i, Register::RA);
+                assert_eq!(cpu.regs.get(Register::RA), out);
             }
         }
     }
@@ -139,9 +143,9 @@ mod tests {
         for (inp, out) in data {
             for i in 0..4 {
                 cpu.store_halfword(i, inp).unwrap();
-                cpu.lh(0, i, 1);
+                cpu.lh(Register::ZERO, i, Register::RA);
                 assert_eq!(
-                    cpu.regs.get(1),
+                    cpu.regs.get(Register::RA),
                     out,
                     "{}",
                     format!("i: {}, inp: {}, out: {}", i, inp, out)
@@ -161,8 +165,13 @@ mod tests {
         for v in data {
             for i in 0..4 {
                 cpu.store_word(i, v).unwrap();
-                cpu.lw(0, i, 1);
-                assert_eq!(cpu.regs.get(1), v, "{}", format!("i: {}, value: {}", i, v));
+                cpu.lw(Register::ZERO, i, Register::RA);
+                assert_eq!(
+                    cpu.regs.get(Register::RA),
+                    v,
+                    "{}",
+                    format!("i: {}, value: {}", i, v)
+                );
             }
         }
     }
@@ -176,8 +185,8 @@ mod tests {
         for (inp, out) in data {
             for i in 0..4 {
                 cpu.store_byte(i, inp).unwrap();
-                cpu.lbu(0, i, 1);
-                assert_eq!(cpu.regs.get(1), out);
+                cpu.lbu(Register::ZERO, i, Register::RA);
+                assert_eq!(cpu.regs.get(Register::RA), out);
             }
         }
     }

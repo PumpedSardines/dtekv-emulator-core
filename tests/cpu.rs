@@ -48,14 +48,14 @@ fn test_factorial_riscv_program() {
     for _ in 0..200 {
         cpu.clock();
     }
-    assert_eq!(cpu.regs.get(7), 40320);
+    assert_eq!(cpu.regs.get(register::Register::T2), 40320);
 }
 
 #[test]
 fn test_sieves_c_program() {
     let mut cpu = new_cpu();
     // Set stack pointer somewhere
-    cpu.regs.set(2, 0x2000);
+    cpu.regs.set(register::Register::SP, 0x2000);
     // Testing the following C program is compiled to RISC-V assembly
     /*
     char *sieves = (char *)0x100;
@@ -188,7 +188,7 @@ fn test_sieves_c_program() {
 fn test_sieves_c_program_o3() {
     let mut cpu = new_cpu();
     // Set stack pointer somewhere
-    cpu.regs.set(2, 0x2000);
+    cpu.regs.set(register::Register::SP, 0x2000);
     // Testing the following C program is compiled to RISC-V assembly with the 03 optimization flag
     /*
     char *sieves = (char *)0x100;
@@ -341,5 +341,5 @@ fn writing_and_running() {
         cpu.clock();
     }
 
-    assert_eq!(cpu.regs.get(5), 2);
+    assert_eq!(cpu.regs.get(register::Register::T0), 2);
 }

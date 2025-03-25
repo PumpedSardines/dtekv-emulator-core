@@ -10,11 +10,14 @@
 //! Data. This is because the Cpu does some extra caching logic that speeds up the emulator.
 //! Otherwise the cache might get out of sync with the memory
 
+pub mod cpu;
+pub mod csr;
+pub mod register;
+
 pub mod exception;
 pub mod instruction;
 
 pub mod io;
-pub mod cpu;
 
 #[cfg(feature = "debug-console")]
 pub mod debug_console;

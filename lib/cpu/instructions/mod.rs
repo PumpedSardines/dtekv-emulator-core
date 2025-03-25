@@ -2,9 +2,9 @@
 
 mod branch;
 mod csr;
-mod i_type;
+mod imm;
 mod jump;
 mod load_store;
 mod m_ext;
 mod misc;
-mod r_type;
+mod reg;

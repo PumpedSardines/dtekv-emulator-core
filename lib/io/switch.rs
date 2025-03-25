@@ -1,4 +1,4 @@
-use crate::{exception, io, utils};
+use crate::{exception::{Exception}, io, utils};
 
 #[derive(Clone)]
 pub struct Switch {
@@ -38,11 +38,11 @@ impl Switch {
 impl io::Device<()> for Switch {}
 
 impl io::Interruptable for Switch {
-    fn interrupt(&self) -> Option<u32> {
+    fn interrupt(&self) -> Option<Exception> {
         let interrupt_condition = (self.edge_cap & self.interrupt_mask) != 0;
 
         if interrupt_condition {
-            Some(exception::SWITCH_INTERRUPT)
+            Some(Exception::SWITCH_INTERRUPT)
         } else {
             None
         }
