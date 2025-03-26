@@ -1,3 +1,0 @@
-trait Bus: Interuptable + MemoryMapped {
-    
-}
