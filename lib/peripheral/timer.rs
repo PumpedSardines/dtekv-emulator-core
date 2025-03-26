@@ -1,5 +1,8 @@
-use crate::{cpu, exception::Exception, io};
 use std::time::{Duration, Instant};
+
+use crate::{cpu, interrupt::InterruptSignal, memory_mapped::MemoryMapped};
+
+use super::{ Peripheral};
 
 pub const TIMER_LOWER_ADDR: u32 = 0x4000020;
 pub const TIMER_HIGHER_ADDR: u32 = 0x400003f;
@@ -53,29 +56,17 @@ impl Timer {
     }
 }
 
-impl io::Device<()> for Timer {
-    fn clock(&mut self) {
-        if self.running {
-            let elapsed = self.clock_start.elapsed();
-            if elapsed >= self.period_duration {
-                self.time_out = true;
-                self.clock_start = Instant::now();
-            }
-        }
-    }
-}
-
-impl io::Interruptable for Timer {
-    fn interrupt(&self) -> Option<Exception> {
+impl Peripheral<()> for Timer {
+    fn poll_interrupt(&self) -> Option<InterruptSignal> {
         if self.should_interrupt() {
-            Some(Exception::TIMER_INTERRUPT)
+            Some(InterruptSignal::TIMER_INTERRUPT)
         } else {
             None
         }
     }
 }
 
-impl io::Data<()> for Timer {
+impl MemoryMapped<()> for Timer {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
         let addr = addr - TIMER_LOWER_ADDR;
         let part = addr / 4;

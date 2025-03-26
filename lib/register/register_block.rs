@@ -15,7 +15,12 @@ impl RegisterBlock {
         if reg == Register::ZERO {
             return 0;
         }
-        self.registers[Into::<usize>::into(reg) - 1]
+
+        let reg = reg.as_usize() - 1;
+        debug_assert!(reg < 31);
+
+        // SAFETY: Register is guaranteed to be in the range 0..=31
+        unsafe { *self.registers.get_unchecked(reg) }
     }
 
     /// Sets the value of a certain register
@@ -23,7 +28,14 @@ impl RegisterBlock {
         if reg == Register::ZERO {
             return;
         }
-        self.registers[Into::<usize>::into(reg) - 1] = val;
+
+        let reg = reg.as_usize() - 1;
+        debug_assert!(reg < 31);
+
+        // SAFETY: Register is guaranteed to be in the range 0..31
+        unsafe {
+            *self.registers.get_unchecked_mut(reg) = val;
+        }
     }
 
     /// Sets all registers to 0

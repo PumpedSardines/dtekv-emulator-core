@@ -1,6 +1,6 @@
-use crate::{cpu::Cpu, csr::Csr, exception::Exception, io};
+use crate::{cpu::Cpu, csr::Csr, interrupt::InterruptSignal, peripheral::Peripheral};
 
-impl<T: io::Data<()>> Cpu<T> {
+impl<T: Peripheral<()>> Cpu<T> {
     pub(crate) fn mret(&mut self) {
         self.pc = self.csr.load(Csr::MEPC);
         self.csr.set_mstatus_mie(self.csr.get_mstatus_mpie());
@@ -9,6 +9,6 @@ impl<T: io::Data<()>> Cpu<T> {
 
     pub(crate) fn ecall(&mut self) {
         self.pc += 4;
-        self.interrupt(Exception::ENVIRONMENT_CALL_FROM_M_MODE);
+        self.handle_interrupt(InterruptSignal::ENVIRONMENT_CALL_FROM_M_MODE);
     }
 }

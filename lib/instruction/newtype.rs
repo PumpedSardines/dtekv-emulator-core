@@ -1,8 +1,14 @@
 use std::fmt;
 
 macro_rules! create_imm_struct {
-    ($name:ident, $from_instr:expr, $safety:expr, $safety_doc:meta) => {
+    (
+        $doc:meta,
+        $name:ident,
+        $from_instr:expr,
+        $safety:expr,
+        $safety_doc:meta) => {
         #[derive(Copy, Clone, PartialEq, Eq, Hash)]
+        #[$doc]
         pub struct $name(u32);
         impl $name {
             pub fn new(imm: u32) -> Option<Self> {
@@ -85,6 +91,7 @@ fn helper_signed_ext_within_range(val: u32, bit_mask: u32) -> bool {
 }
 
 create_imm_struct!(
+    doc = "Immediate value for U-type instructions",
     UTypeImm,
     |instr:u32| { instr & 0xFFFF_F000 },
     |imm| { imm & 0xFFF == 0 },
@@ -92,6 +99,7 @@ create_imm_struct!(
 );
 
 create_imm_struct!(
+    doc = "Immediate value for J-type instructions",
     JTypeImm,
     |instr: u32| {
         ((((instr as i32) >> 31) << 20) as u32)
@@ -107,6 +115,7 @@ create_imm_struct!(
 );
 
 create_imm_struct!(
+    doc = "Immediate value for I-type instructions",
     ITypeImm,
     |instr: u32| { ((instr as i32) >> 20) as u32 },
     |imm| { 
@@ -116,6 +125,7 @@ create_imm_struct!(
 );
 
 create_imm_struct!(
+    doc = "Immediate value for I-Type instructions using shamt field",
     ShamtImm,
     |instr: u32| { (instr >> 20) & 0x1F },
     |imm| { 
@@ -125,6 +135,7 @@ create_imm_struct!(
 );
 
 create_imm_struct!(
+    doc = "Immediate value for S-type instructions",
     STypeImm,
     |instr: u32| {  (((instr as i32) >> 25) << 5) as u32 | ((instr >> 7) & 0x1F) },
     |imm| { helper_signed_ext_within_range(imm, 0xFFF)  },
@@ -132,6 +143,7 @@ create_imm_struct!(
 );
 
 create_imm_struct!(
+    doc = "Immediate value for B-type instructions",
     BTypeImm,
     |instr: u32| {  
         (((instr as i32) >> 31) << 12) as u32

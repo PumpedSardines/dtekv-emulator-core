@@ -38,11 +38,17 @@ impl CsrBlock {
     }
 
     pub fn load(&self, csr: Csr) -> u32 {
-        self.csrs[Into::<usize>::into(csr)]
+        // SAFETY: Csr is guaranteed to be in the range 0..4096
+        let csr = Into::<usize>::into(csr);
+        debug_assert!(csr < 4096);
+        unsafe { *self.csrs.get_unchecked(csr) }
     }
 
     pub fn store(&mut self, csr: Csr, value: u32) {
-        self.csrs[Into::<usize>::into(csr)] = value;
+        // SAFETY: Csr is guaranteed to be in the range 0..4096
+        let csr = Into::<usize>::into(csr);
+        debug_assert!(csr < 4096);
+        unsafe { *self.csrs.get_unchecked_mut(csr) = value }
     }
 }
 

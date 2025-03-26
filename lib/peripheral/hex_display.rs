@@ -1,4 +1,6 @@
-use crate::io;
+use peripheral::Peripheral;
+
+use crate::{memory_mapped::MemoryMapped, peripheral};
 
 #[derive(Clone)]
 pub struct HexDisplay {
@@ -29,11 +31,8 @@ impl Default for HexDisplay {
     }
 }
 
-impl io::Device<()> for HexDisplay {}
-
-impl io::Interruptable for HexDisplay {}
-
-impl io::Data<()> for HexDisplay {
+impl Peripheral<()> for HexDisplay {}
+impl MemoryMapped<()> for HexDisplay {
     fn load_byte(&self, _addr: u32) -> Result<u8, ()> {
         // hard wired to 0
         Ok(0)

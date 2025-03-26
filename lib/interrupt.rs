@@ -1,9 +1,19 @@
 //! Exception codes for the DTEK-V
 
-pub struct Exception(u32, bool);
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct InterruptSignal(u32, bool);
 
-impl Exception {
-    pub fn new(cause: u32, external: bool) -> Self {
+impl InterruptSignal {
+    pub fn new(cause: u32, external: bool) -> Option<Self> {
+        // Cause can't have highest bit set since that represents an hardware interrupt
+        if cause & 0x80000000 == 1 {
+            return None;
+        }
+
+        Some(unsafe { Self::new_unchecked(cause, external) })
+    }
+
+    unsafe fn new_unchecked(cause: u32, external: bool) -> Self {
         Self(cause, external)
     }
 
@@ -16,11 +26,11 @@ impl Exception {
     }
 }
 
-macro_rules! exception_list {
+macro_rules! interrupt_list {
     ($(($name:ident, $code:expr, $external:expr, $desc:expr),)+) => {
-impl Exception {
+impl InterruptSignal {
     $(
-    pub const $name: Exception = Exception($code, $external);
+    pub const $name: InterruptSignal = InterruptSignal($code, $external);
     )*
 
     pub fn name(&self) -> Option<&'static str> {
@@ -33,7 +43,7 @@ impl Exception {
     };
 }
 
-exception_list! {
+interrupt_list! {
     (INSTRUCTION_ADDRESS_MISALIGNED, 0, false, "Instruction address misaligned"),
     (ILLEGAL_INSTRUCTION, 2, false, "Illegal instruction"),
     (ENVIRONMENT_CALL_FROM_M_MODE, 11, false, "Environment call from M-mode"),

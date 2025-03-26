@@ -8,7 +8,7 @@ use crate::{csr::Csr, register::Register};
 
 use super::{BTypeImm, ITypeImm, JTypeImm, STypeImm, ShamtImm, UTypeImm};
 
-/// The RISC-V instructions that are implemented
+/// A RISC-V instruction
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Instruction {
     LUI {
@@ -209,6 +209,7 @@ pub enum Instruction {
         csr: Csr,
     },
     CSRRWI {
+        // TODO: Shamt should probably be used here, look up
         imm: u32,
         rd: Register,
         csr: Csr,

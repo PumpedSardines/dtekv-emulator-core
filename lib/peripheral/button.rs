@@ -1,8 +1,6 @@
-use crate::{
-    exception::Exception,
-    io::{self, Data},
-    utils,
-};
+use crate::{interrupt::InterruptSignal, memory_mapped::MemoryMapped, utils};
+
+use super::peripheral::Peripheral;
 
 #[derive(Clone)]
 pub struct Button {
@@ -42,19 +40,17 @@ impl Button {
     }
 }
 
-impl io::Device<()> for Button {}
-
-impl io::Interruptable for Button {
-    fn interrupt(&self) -> Option<Exception> {
+impl Peripheral<()> for Button {
+    fn poll_interrupt(&self) -> Option<InterruptSignal> {
         if self.should_interrupt() {
-            Some(Exception::BUTTON_INTERRUPT)
+            Some(InterruptSignal::BUTTON_INTERRUPT)
         } else {
             None
         }
     }
 }
 
-impl Data<()> for Button {
+impl MemoryMapped<()> for Button {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
         let addr = addr - BUTTON_LOWER_ADDR;
         Ok(if addr == 0 {

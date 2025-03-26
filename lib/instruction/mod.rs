@@ -1,3 +1,5 @@
+//! RISC-V instruction parsing
+
 mod instruction;
 pub use instruction::Instruction;
 

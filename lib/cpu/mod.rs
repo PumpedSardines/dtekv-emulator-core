@@ -1,11 +1,15 @@
+//! The CPU module
+//!
+//! IMPORTANT: After creating the Cpu you should access memory through the Cpu's implementation of
+//! Data. This is because the Cpu does some extra caching logic that speeds up the emulator.
+//! Otherwise the cache might get out of sync with the memory
+
+use std::{cell::RefCell, rc::Rc};
+
 #[cfg(feature = "debug-console")]
 use crate::debug_console::DebugConsole;
 use crate::{
-    csr::{Csr, CsrBlock},
-    exception::Exception,
-    instruction::Instruction,
-    io::{self, Data, SDRAM_SIZE},
-    register::RegisterBlock,
+    csr::{Csr, CsrBlock}, instruction::Instruction, interrupt::InterruptSignal, memory_mapped::MemoryMapped, peripheral::{Peripheral, SDRAM_SIZE}, register::RegisterBlock
 };
 
 mod instructions;
@@ -13,30 +17,36 @@ mod instructions;
 pub const CLOCK_FEQ: u32 = 30_000_000;
 
 #[derive(Debug)]
-pub struct Cpu<T: io::Data<()>> {
+pub struct Cpu<T: Peripheral<()>> {
     /// Data line struct that allows the CPU to communicate to memory and IO devices
     pub bus: T,
     /// Every time an instruction is fetched we store it into this vector
     /// Instead of fetching it again we can just use the instruction from the cache
     instruction_cache: Vec<Option<Instruction>>,
     #[cfg(feature = "debug-console")]
-    pub debug_console: DebugConsole,
+    debug_console: Option<Rc<RefCell<DebugConsole>>>,
     pub regs: RegisterBlock,
     pub csr: CsrBlock,
     pub pc: u32,
 }
 
-impl<T: io::Data<()>> Cpu<T> {
+impl<T: Peripheral<()>> Cpu<T> {
     pub fn new_with_bus(bus: T) -> Cpu<T> {
         Cpu {
             bus,
             #[cfg(feature = "debug-console")]
-            debug_console: DebugConsole::new(),
+            debug_console: None,
             regs: RegisterBlock::new(),
             instruction_cache: vec![None; SDRAM_SIZE / 4],
             csr: CsrBlock::new(),
             pc: 0,
         }
+    }
+
+    #[cfg(feature = "debug-console")]
+    pub fn with_debug_console(mut self, debug_console: Rc<RefCell<DebugConsole>>) -> Self {
+        self.debug_console = Some(debug_console);
+        self
     }
 
     /// Sends a reset signal to the CPU, the same as pressing the reset button on the DTEK-V board
@@ -79,11 +89,12 @@ impl<T: io::Data<()>> Cpu<T> {
         }
     }
 
-    fn fetch_instruction(&mut self) -> Result<Instruction, Exception> {
+    fn fetch_instruction(&mut self) -> Result<Instruction, InterruptSignal> {
         if (self.pc & 3) != 0 {
-            #[cfg(feature = "debug-console")]
-            self.debug_console.instruction_misaligned(self.pc);
-            return Err(Exception::INSTRUCTION_ADDRESS_MISALIGNED);
+            if let Some(db) = &self.debug_console {
+                db.borrow_mut().instruction_misaligned(self.pc);
+            }
+            return Err(InterruptSignal::INSTRUCTION_ADDRESS_MISALIGNED);
         }
 
         let cache_index = self.pc / 4;
@@ -101,10 +112,12 @@ impl<T: io::Data<()>> Cpu<T> {
             .and_then(|word| word.try_into())
             .map_err(|_| {
                 #[cfg(feature = "debug-console")]
-                self.debug_console
-                    .illegal_instruction(self.bus.load_word(self.pc).unwrap_or(0), self.pc);
+                if let Some(db) = &self.debug_console {
+                    db.borrow_mut()
+                        .illegal_instruction(self.bus.load_word(self.pc).unwrap_or(0), self.pc);
+                }
 
-                Exception::ILLEGAL_INSTRUCTION
+                InterruptSignal::ILLEGAL_INSTRUCTION
             });
 
         if can_cache {
@@ -177,7 +190,7 @@ impl<T: io::Data<()>> Cpu<T> {
     }
 
     /// Sends a interrupt signal to the CPU
-    pub fn interrupt(&mut self, exception: Exception) {
+    pub fn handle_interrupt(&mut self, exception: InterruptSignal) {
         // If interrupts are disabled, ignore the interrupt
         if !self.csr.get_mstatus_mie() {
             return;
@@ -204,22 +217,22 @@ impl<T: io::Data<()>> Cpu<T> {
     }
 
     pub fn clock(&mut self) {
-        let instr: Result<Instruction, Exception> = self.fetch_instruction();
+        let instr: Result<Instruction, InterruptSignal> = self.fetch_instruction();
 
         match instr {
             Ok(instr) => {
                 self.exec_instruction(instr);
             }
             Err(exception) => {
-                self.interrupt(exception);
+                self.handle_interrupt(exception);
             }
         }
     }
 }
 
-impl<T> io::Data<()> for Cpu<T>
+impl<T> MemoryMapped<()> for Cpu<T>
 where
-    T: io::Data<()>,
+    T: Peripheral<()>,
 {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
         self.bus.load_byte(addr)
@@ -247,28 +260,12 @@ where
         self.clear_instruction_cache(addr);
         self.bus.store_word(addr, word)
     }
-
-    fn store_at<K: Into<u8>, R: IntoIterator<Item = K>>(
-        &mut self,
-        offset: u32,
-        bin: R,
-    ) -> Result<(), ()>
-    where
-        Self: Sized,
-    {
-        for (i, byte) in bin.into_iter().enumerate() {
-            let i = i as u32;
-            self.store_byte(offset + i, byte.into())?;
-        }
-
-        Ok(())
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::io;
+    use crate::peripheral;
     use crate::register::Register;
     use crate::test_utils::*;
 
@@ -319,7 +316,7 @@ mod tests {
 
     #[test]
     fn test_load_and_save() {
-        let sdram = io::SDRam::new();
+        let sdram = peripheral::SDRam::new();
         let mut cpu = Cpu::new_with_bus(sdram);
 
         cpu.exec_instruction(0x361880b7.try_into().unwrap()); // lui x1, 0x36188

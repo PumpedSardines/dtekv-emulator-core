@@ -1,13 +1,23 @@
-use crate::{cpu::Cpu, csr::Csr, io, register::Register};
+use crate::{cpu::Cpu, csr::Csr, peripheral::{self, Peripheral}, register::Register};
 
-fn debug_console_csr_helper<T: io::Data<()>>(cpu: &mut Cpu<T>, csr: Csr) {
+fn debug_console_csr_helper<T: Peripheral<()>>(cpu: &mut Cpu<T>, csr: Csr) {
     #[cfg(feature = "debug-console")]
     if !csr.meaningfully_emulated() {
-        cpu.debug_console.access_useless_csr(csr, cpu.pc);
+        if let Some(db) = &cpu.debug_console {
+            db.borrow_mut().access_useless_csr(csr, cpu.pc);
+        }
     }
 }
 
-impl<T: io::Data<()>> Cpu<T> {
+fn debug_console_not_implemented<T: Peripheral<()>>(cpu: &mut Cpu<T>, instruction: &'static str) {
+    #[cfg(feature = "debug-console")]
+    if let Some(db) = &cpu.debug_console {
+        db.borrow_mut()
+            .instruction_not_implemented(instruction, cpu.pc);
+    }
+}
+
+impl<T: Peripheral<()>> Cpu<T> {
     pub(crate) fn csrrw(&mut self, rs1: Register, csr: Csr, rd: Register) {
         debug_console_csr_helper(self, csr);
 
@@ -37,9 +47,7 @@ impl<T: io::Data<()>> Cpu<T> {
     }
 
     pub(crate) fn csrrwi(&mut self, _imm: u32, _csr: Csr, _rd: Register) {
-        #[cfg(feature = "debug-console")]
-        self.debug_console
-            .instruction_not_implemented("CSRRWI", self.pc);
+        debug_console_not_implemented(self, "CSRRWI");
 
         self.pc += 4;
     }
@@ -48,18 +56,13 @@ impl<T: io::Data<()>> Cpu<T> {
         debug_console_csr_helper(self, csr);
 
         let value = self.csr.load(csr);
-
-        // NOTE: Dtekv differs from risc-v here:
-        self.csr
-            .store(csr, self.csr.load(csr) | (1 << imm));
+        self.csr.store(csr, self.csr.load(csr) | (1 << imm));
         self.regs.set(rd, value);
         self.pc += 4;
     }
 
     pub(crate) fn csrrci(&mut self, _imm: u32, _csr: Csr, _rd: Register) {
-        #[cfg(feature = "debug-console")]
-        self.debug_console
-            .instruction_not_implemented("csrrci", self.pc);
+        debug_console_not_implemented(self, "CSRRCI");
 
         self.pc += 4;
     }

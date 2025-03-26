@@ -1,16 +1,10 @@
-//! IO devices
+//! Peripherals
 
-mod data;
-pub use data::Data;
-
-mod device;
-pub use device::Device;
+mod peripheral;
+pub use peripheral::Peripheral;
 
 mod bus;
 pub use bus::Bus;
-
-mod interruptable;
-pub use interruptable::Interruptable;
 
 mod button;
 pub use button::*;
@@ -33,8 +27,4 @@ pub use timer::*;
 mod uart;
 pub use uart::*;
 
-mod vga_buffer;
-pub use vga_buffer::*;
-
-mod vga_dma;
-pub use vga_dma::*;
+mod vga;

@@ -1,4 +1,4 @@
-use crate::{io, utils};
+use crate::{memory_mapped::MemoryMapped, peripheral::Peripheral, utils};
 
 pub const VGA_DMA_LOWER_ADDR: u32 = 0x4000100;
 pub const VGA_DMA_HIGHER_ADDR: u32 = 0x400010f;
@@ -49,10 +49,8 @@ impl VgaDma {
     pub fn get_buffer(&self) -> u32 {
         self.buffer
     }
-}
 
-impl io::Device<()> for VgaDma {
-    fn clock(&mut self) {
+    pub fn handle_swap(&mut self) {
         // Swap the buffers if needed
         if self.is_swapping {
             let temp = self.buffer;
@@ -63,9 +61,9 @@ impl io::Device<()> for VgaDma {
     }
 }
 
-impl io::Interruptable for VgaDma {}
+impl Peripheral<()> for VgaDma {}
 
-impl io::Data<()> for VgaDma {
+impl MemoryMapped<()> for VgaDma {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
         let addr = addr - VGA_DMA_LOWER_ADDR;
         let part: VgaDmaPart = addr.into();

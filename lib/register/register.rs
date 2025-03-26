@@ -25,6 +25,14 @@ impl Register {
         }
         Register(reg)
     }
+
+    pub fn as_u32(&self) -> u32 {
+        self.0 as u32
+    }
+
+    pub fn as_usize(&self) -> usize {
+        self.0 as usize
+    }
 }
 
 impl std::fmt::Debug for Register {
@@ -43,14 +51,14 @@ impl TryFrom<u32> for Register {
 
 impl Into<u32> for Register {
     fn into(self) -> u32 {
-        self.0 as u32
+        self.as_u32()
     }
 }
 
 impl Into<usize> for Register {
     fn into(self) -> usize {
         // Since Register can't be negative, this is safe
-        self.0 as usize
+        self.as_usize()
     }
 }
 

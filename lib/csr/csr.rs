@@ -26,8 +26,8 @@ impl Csr {
         Csr(csr)
     }
 
-    /// If a given CSR is has a meanigful implementation. I.e if there is a reason to write and read
-    /// from this register. This is usefull for generating warnings when a CSR is accessed that wouldn't matter,
+    /// If a given CSR is has a meaningful implementation. I.e if there is a reason to write and read
+    /// from this register. This is useful for generating warnings when a CSR is accessed that wouldn't matter,
     /// informing the user that what is trying to be done is not implemented.
     pub fn meaningfully_emulated(&self) -> bool {
         match *self {

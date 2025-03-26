@@ -1,12 +1,14 @@
+use std::fmt;
 
-use crate::{exception::Exception, io::{self, Data, Device}};
+use crate::{
+    interrupt::InterruptSignal, memory_mapped::MemoryMapped, peripheral::Peripheral
+};
 
 /// You should probably not use the default bus implementation. It is very general purpose and is
 /// quite slow. You should implement your own bus for your specific needs. This is mostly here for
 /// completeness and for testing purposes.
-#[derive(Debug)]
 pub struct Bus {
-    devices: Vec<((u32, u32), Box<dyn Device<()>>)>,
+    devices: Vec<((u32, u32), Box<dyn Peripheral<()>>)>,
 }
 
 impl Default for Bus {
@@ -15,29 +17,27 @@ impl Default for Bus {
     }
 }
 
+impl fmt::Debug for Bus {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Bus {{ ... }}")
+    }
+}
+
 impl Bus {
     pub fn new() -> Self {
         Bus { devices: vec![] }
     }
 
-    pub fn attach_device(&mut self, range: (u32, u32), device: Box<dyn Device<()>>) {
+    pub fn attach_device(&mut self, range: (u32, u32), device: Box<dyn Peripheral<()>>) {
         self.devices.push((range, device));
     }
 }
 
-impl io::Device<()> for Bus {
-    fn clock(&mut self) {
-        for (_, device) in &mut self.devices {
-            device.clock();
-        }
-    }
-}
-
-impl io::Interruptable for Bus {
-    fn interrupt(&self) -> Option<Exception> {
+impl Peripheral<()> for Bus {
+    fn poll_interrupt(&self) -> Option<InterruptSignal> {
         for (_, device) in &self.devices {
-            if let Some(cause) = device.interrupt() {
-                return Some(cause);
+            if let Some(signal) = device.poll_interrupt() {
+                return Some(signal);
             }
         }
 
@@ -45,7 +45,7 @@ impl io::Interruptable for Bus {
     }
 }
 
-impl Data<()> for Bus {
+impl MemoryMapped<()> for Bus {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
         for ((lower, higher), device) in &self.devices {
             if addr >= *lower && addr <= *higher {

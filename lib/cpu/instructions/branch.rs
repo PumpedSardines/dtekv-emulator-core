@@ -1,6 +1,6 @@
-use crate::{cpu::Cpu, instruction::BTypeImm, io, register::Register};
+use crate::{cpu::Cpu, instruction::BTypeImm, peripheral::Peripheral, register::Register};
 
-impl<T: io::Data<()>> Cpu<T> {
+impl<T: Peripheral<()>> Cpu<T> {
     pub(crate) fn beq(&mut self, rs1: Register, rs2: Register, imm: BTypeImm) {
         let imm = imm.as_u32();
         let rs1 = self.regs.get(rs1);

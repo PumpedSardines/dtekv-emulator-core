@@ -1,4 +1,4 @@
-use crate::{io, utils};
+use crate::{memory_mapped, peripheral, utils};
 
 #[derive(Clone)]
 pub struct LEDStrip {
@@ -25,11 +25,8 @@ impl Default for LEDStrip {
     }
 }
 
-impl io::Device<()> for LEDStrip {}
-
-impl io::Interruptable for LEDStrip {}
-
-impl io::Data<()> for LEDStrip {
+impl peripheral::Peripheral<()> for LEDStrip {}
+impl memory_mapped::MemoryMapped<()> for LEDStrip {
     fn load_byte(&self, _addr: u32) -> Result<u8, ()> {
         // hard wired to 0
         Ok(0)

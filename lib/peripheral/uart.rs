@@ -1,5 +1,8 @@
-use crate::io;
 use std::collections::LinkedList;
+
+use crate::memory_mapped::MemoryMapped;
+
+use super::Peripheral;
 
 pub const UART_LOWER_ADDR: u32 = 0x04000040;
 pub const UART_HIGHER_ADDR: u32 = 0x04000047;
@@ -25,9 +28,7 @@ impl UART {
     }
 }
 
-impl io::Device<()> for UART {}
-
-impl io::Interruptable for UART {}
+impl Peripheral<()> for UART {}
 
 impl Default for UART {
     fn default() -> Self {
@@ -43,7 +44,7 @@ impl Iterator for UART {
     }
 }
 
-impl io::Data<()> for UART {
+impl MemoryMapped<()> for UART {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
         let addr = addr - UART_LOWER_ADDR;
         Ok(if addr >= 4 {

@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub trait Data<T> {
+pub trait MemoryMapped<T> {
     fn load_byte(&self, addr: u32) -> Result<u8, T>;
     fn store_byte(&mut self, addr: u32, byte: u8) -> Result<(), T>;
 
@@ -62,9 +62,9 @@ pub trait Data<T> {
     }
 }
 
-impl<K, T> Data<T> for Rc<RefCell<K>>
+impl<K, T> MemoryMapped<T> for Rc<RefCell<K>>
 where
-    K: Data<T>,
+    K: MemoryMapped<T>,
 {
     fn load_byte(&self, addr: u32) -> Result<u8, T> {
         self.borrow().load_byte(addr)

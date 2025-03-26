@@ -1,19 +1,34 @@
 use crate::{
     cpu::Cpu,
     instruction::{ITypeImm, STypeImm},
-    io::{self, Data},
+    memory_mapped::MemoryMapped,
+    peripheral::Peripheral,
     register::Register,
 };
 
-impl<T: io::Data<()>> Cpu<T> {
+fn debug_console_load_oob<T: Peripheral<()>>(cpu: &mut Cpu<T>, addr: u32) {
+    #[cfg(feature = "debug-console")]
+    if let Some(db) = &cpu.debug_console {
+        db.borrow_mut().load_out_of_bounds(addr, cpu.pc);
+    }
+}
+
+fn debug_console_store_oob<T: Peripheral<()>>(cpu: &mut Cpu<T>, addr: u32) {
+    #[cfg(feature = "debug-console")]
+    if let Some(db) = &cpu.debug_console {
+        db.borrow_mut().store_out_of_bounds(addr, cpu.pc);
+    }
+}
+
+impl<T: Peripheral<()>> Cpu<T> {
     pub(crate) fn lb(&mut self, rs1: Register, imm: ITypeImm, rd: Register) {
         let imm = imm.as_u32();
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
 
         let byte = self.load_byte(addr).unwrap_or_else(|_| {
-            #[cfg(feature = "debug-console")]
-            self.debug_console.load_out_of_bounds(addr, self.pc);
+            debug_console_load_oob(self, addr);
+
             0xDE
         }) as i8 as i32 as u32;
 
@@ -27,8 +42,8 @@ impl<T: io::Data<()>> Cpu<T> {
         let addr = rs1.wrapping_add(imm);
 
         let halfword = self.load_halfword(addr).unwrap_or_else(|_| {
-            #[cfg(feature = "debug-console")]
-            self.debug_console.load_out_of_bounds(addr, self.pc);
+            debug_console_load_oob(self, addr);
+
             0xDEAD
         }) as i16 as i32 as u32;
 
@@ -41,8 +56,8 @@ impl<T: io::Data<()>> Cpu<T> {
         let rs1 = self.regs.get(rs1);
         let addr = rs1.wrapping_add(imm);
         let word = self.load_word(addr).unwrap_or_else(|_| {
-            #[cfg(feature = "debug-console")]
-            self.debug_console.load_out_of_bounds(addr, self.pc);
+            debug_console_load_oob(self, addr);
+
             0xDEAD_BEEF
         });
 
@@ -56,8 +71,8 @@ impl<T: io::Data<()>> Cpu<T> {
         let addr = rs1.wrapping_add(imm);
 
         let byte = self.load_byte(addr).unwrap_or_else(|_| {
-            #[cfg(feature = "debug-console")]
-            self.debug_console.load_out_of_bounds(addr, self.pc);
+            debug_console_load_oob(self, addr);
+
             0xDE
         });
 
@@ -71,8 +86,8 @@ impl<T: io::Data<()>> Cpu<T> {
         let addr = rs1.wrapping_add(imm);
 
         let halfword = self.load_halfword(addr).unwrap_or_else(|_| {
-            #[cfg(feature = "debug-console")]
-            self.debug_console.load_out_of_bounds(addr, self.pc);
+            debug_console_load_oob(self, addr);
+
             0xDEAD
         });
 
@@ -87,8 +102,7 @@ impl<T: io::Data<()>> Cpu<T> {
         let addr = rs1.wrapping_add(imm);
 
         if self.store_byte(addr, rs2 as u8).is_err() {
-            #[cfg(feature = "debug-console")]
-            self.debug_console.store_out_of_bounds(addr, self.pc);
+            debug_console_store_oob(self, addr);
         }
 
         self.pc += 4;
@@ -101,8 +115,7 @@ impl<T: io::Data<()>> Cpu<T> {
         let addr = rs1.wrapping_add(imm);
 
         if self.store_halfword(addr, rs2 as u16).is_err() {
-            #[cfg(feature = "debug-console")]
-            self.debug_console.store_out_of_bounds(addr, self.pc);
+            debug_console_store_oob(self, addr);
         }
 
         self.pc += 4;
@@ -115,8 +128,7 @@ impl<T: io::Data<()>> Cpu<T> {
         let addr = rs1.wrapping_add(imm);
 
         if self.store_word(addr, rs2).is_err() {
-            #[cfg(feature = "debug-console")]
-            self.debug_console.store_out_of_bounds(addr, self.pc);
+            debug_console_store_oob(self, addr);
         }
 
         self.pc += 4;

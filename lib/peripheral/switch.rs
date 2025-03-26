@@ -1,4 +1,6 @@
-use crate::{exception::{Exception}, io, utils};
+use crate::{interrupt::InterruptSignal, memory_mapped::MemoryMapped, utils};
+
+use super::Peripheral;
 
 #[derive(Clone)]
 pub struct Switch {
@@ -35,21 +37,19 @@ impl Switch {
     }
 }
 
-impl io::Device<()> for Switch {}
-
-impl io::Interruptable for Switch {
-    fn interrupt(&self) -> Option<Exception> {
+impl Peripheral<()> for Switch {
+    fn poll_interrupt(&self) -> Option<InterruptSignal> {
         let interrupt_condition = (self.edge_cap & self.interrupt_mask) != 0;
 
         if interrupt_condition {
-            Some(Exception::SWITCH_INTERRUPT)
+            Some(InterruptSignal::SWITCH_INTERRUPT)
         } else {
             None
         }
     }
 }
 
-impl io::Data<()> for Switch {
+impl MemoryMapped<()> for Switch {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
         let addr = addr - SWITCH_LOWER_ADDR;
 

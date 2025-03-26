@@ -1,11 +1,11 @@
 use crate::{
     cpu::Cpu,
     instruction::{ITypeImm, ShamtImm},
-    io,
+    peripheral::Peripheral,
     register::Register,
 };
 
-impl<T: io::Data<()>> Cpu<T> {
+impl<T: Peripheral<()>> Cpu<T> {
     pub(crate) fn addi(&mut self, rs1: Register, imm: ITypeImm, rd: Register) {
         let imm = imm.as_u32();
         let rs1 = self.regs.get(rs1);

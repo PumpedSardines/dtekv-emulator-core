@@ -2,21 +2,21 @@ use std::{cell::RefCell, rc::Rc};
 
 /// Test larger programs using the emulator to ensure the CPU is working correctly
 use dtekv_emulator_core::*;
-use io::Data;
+use peripheral::MemoryMapped;
 
 #[test]
 fn test_hex_display() {
     // Program that stores the bit mask for the number 9 in the hex display
 
-    let mut bus = io::Bus::new();
-    let hex_display = Rc::new(RefCell::new(io::HexDisplay::new()));
-    let sdram = Rc::new(RefCell::new(io::SDRam::new()));
+    let mut bus = peripheral::Bus::new();
+    let hex_display = Rc::new(RefCell::new(peripheral::HexDisplay::new()));
+    let sdram = Rc::new(RefCell::new(peripheral::SDRam::new()));
     bus.attach_device(
-        (io::HEX_DISPLAY_LOWER_ADDR, io::HEX_DISPLAY_HIGHER_ADDR),
+        (peripheral::HEX_DISPLAY_LOWER_ADDR, peripheral::HEX_DISPLAY_HIGHER_ADDR),
         Box::new(hex_display.clone()),
     );
     bus.attach_device(
-        (io::SDRAM_LOWER_ADDR, io::SDRAM_HIGHER_ADDR),
+        (peripheral::SDRAM_LOWER_ADDR, peripheral::SDRAM_HIGHER_ADDR),
         Box::new(sdram.clone()),
     );
 
@@ -45,15 +45,15 @@ fn test_hex_display() {
 fn test_switch_display() {
     // Program that stores the bit mask for the number 9 in the hex display
 
-    let mut bus = io::Bus::new();
-    let switch = Rc::new(RefCell::new(io::Switch::new()));
-    let sdram = Rc::new(RefCell::new(io::SDRam::new()));
+    let mut bus = peripheral::Bus::new();
+    let switch = Rc::new(RefCell::new(peripheral::Switch::new()));
+    let sdram = Rc::new(RefCell::new(peripheral::SDRam::new()));
     bus.attach_device(
-        (io::SWITCH_LOWER_ADDR, io::SWITCH_HIGHER_ADDR),
+        (peripheral::SWITCH_LOWER_ADDR, peripheral::SWITCH_HIGHER_ADDR),
         Box::new(switch.clone()),
     );
     bus.attach_device(
-        (io::SDRAM_LOWER_ADDR, io::SDRAM_HIGHER_ADDR),
+        (peripheral::SDRAM_LOWER_ADDR, peripheral::SDRAM_HIGHER_ADDR),
         Box::new(sdram.clone()),
     );
 

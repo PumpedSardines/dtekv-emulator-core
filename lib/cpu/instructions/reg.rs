@@ -1,8 +1,8 @@
-use crate::{cpu::Cpu, io, register::Register};
+use crate::{cpu::Cpu, peripheral::Peripheral, register::Register};
 
 const XLEN_MASK: u32 = 0x1f;
 
-impl<T: io::Data<()>> Cpu<T> {
+impl<T: Peripheral<()>> Cpu<T> {
     pub(crate) fn add(&mut self, rs1: Register, rs2: Register, rd: Register) {
         let rs1 = self.regs.get(rs1);
         let rs2 = self.regs.get(rs2);

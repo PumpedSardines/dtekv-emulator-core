@@ -1,11 +1,11 @@
 use crate::{
     cpu::Cpu,
     instruction::{ITypeImm, JTypeImm, UTypeImm},
-    io,
+    peripheral::Peripheral,
     register::Register,
 };
 
-impl<T: io::Data<()>> Cpu<T> {
+impl<T: Peripheral<()>> Cpu<T> {
     pub(crate) fn lui(&mut self, imm: UTypeImm, rd: Register) {
         self.regs.set(rd, imm.as_u32());
         self.pc += 4;
