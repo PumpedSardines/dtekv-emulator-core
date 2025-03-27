@@ -32,7 +32,7 @@ impl From<u32> for VgaDmaPart {
 }
 
 impl<'a, T: Renderer> Dma<'a, T> {
-    /// Returns a new Memory object with a given size all set to 0
+    /// Create a new DMA peripheral
     pub fn new(channel: &'a Channel<T>) -> Self {
         Dma {
             channel,
@@ -42,11 +42,21 @@ impl<'a, T: Renderer> Dma<'a, T> {
         }
     }
 
-    pub fn get_buffer(&self) -> u32 {
-        self.buffer_offset
-    }
-
-    pub fn handle_swap(&mut self) {
+    /// **TL;DR: Call this function 60 times a second to handle scheduled swaps**
+    ///
+    /// The DMA swapping works by the code writing to a specific memory region to signal that it
+    /// wants to swap the buffers. However a swap takes time on the chip. Therefore writing to the
+    /// swap bit will only schedule a swap, not trigger one.
+    ///
+    /// When emulating we don't really have to worry about this delay so we can just swap
+    /// instantly, however this meant that a lot of users had code that worked on the emulator but
+    /// not on the real hardware since checking the swap bit is optional on the emulator but not on
+    /// the hardware.
+    /// 
+    /// Therefore i've also implemented schedule functionality like this that will schedule a swap
+    /// and execute the swap at a later time. Calling this function will handle a scheduled swap.
+    /// Preferably call this function 60 times a second or something like that.
+    pub  fn handle_swap(&mut self) {
         // Swap the buffers if needed
         if self.channel.is_swapping() {
             let temp = self.buffer_offset;

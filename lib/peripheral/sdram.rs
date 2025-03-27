@@ -72,7 +72,7 @@ mod le {
                 return Err(());
             }
             Ok(unsafe {
-                core::ptr::read_unaligned(
+                core::ptr::read(
                     (self.mem.as_ptr() as *const u8).add(addr as usize) as *const u16
                 )
             })
@@ -163,7 +163,7 @@ mod be {
 
         fn store_byte(&mut self, addr: u32, byte: u8) -> Result<(), ()> {
             let addr = addr - SDRAM_LOWER_ADDR;
-            if addr as usize > self.mem.len() {
+            if addr as usize >= self.mem.len() {
                 return Err(());
             }
 
@@ -178,6 +178,7 @@ mod be {
         }
     }
 }
+
 
 #[cfg(test)]
 mod tests {

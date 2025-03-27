@@ -2,7 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 /// Test larger programs using the emulator to ensure the CPU is working correctly
 use dtekv_emulator_core::*;
-use peripheral::MemoryMapped;
+use memory_mapped::MemoryMapped;
 
 #[test]
 fn test_hex_display() {

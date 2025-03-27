@@ -22,10 +22,7 @@ impl Button {
         }
     }
 
-    pub const fn bounds() -> [(u32, u32); 1] {
-        [(BUTTON_LOWER_ADDR, BUTTON_HIGHER_ADDR)]
-    }
-
+    /// Set's the button state. Call this function when you want to emulate a button press
     pub fn set(&mut self, pressed: bool) {
         self.pressed = pressed;
         self.edge_cap |= 1;

@@ -14,7 +14,6 @@ pub struct Buffer<'a, T: Renderer> {
 }
 
 impl<'a, T: Renderer> Buffer<'a, T> {
-    /// Returns a new Memory object with a given size all set to 0
     pub fn new(channel: &'a Channel<T>) -> Self {
         Buffer {
             channel,
@@ -24,7 +23,7 @@ impl<'a, T: Renderer> Buffer<'a, T> {
         }
     }
 
-    pub fn to_color(&self, pixel: u8) -> (u8, u8, u8) {
+    fn to_color(&self, pixel: u8) -> (u8, u8, u8) {
         let red = pixel & 0b11100000;
         let green = pixel & 0b00011100;
         let blue = pixel & 0b00000011;

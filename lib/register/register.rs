@@ -14,7 +14,7 @@ impl Register {
         }
     }
 
-    /// Creates a new CSR without checking if the given CSR is a valid address
+    /// Creates a new Register without checking if the given Register is a valid reg
     pub unsafe fn new_unchecked(reg: u8) -> Self {
         if (reg as u32) > MAX_REG || (reg as u32) < MIN_REG {
             if cfg!(debug_assertions) {

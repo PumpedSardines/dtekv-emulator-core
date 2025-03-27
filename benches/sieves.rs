@@ -1,6 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use dtekv_emulator_core::*;
-use peripheral::MemoryMapped;
+use memory_mapped::MemoryMapped;
 
 fn new_cpu() -> cpu::Cpu<peripheral::Bus> {
     let mut bus = peripheral::Bus::new();

@@ -15,14 +15,18 @@
 //!
 //! ```rust,no_run
 //! # use dtekv_emulator_core::*;
-//! # use dtekv_emulator_core::io::*;
+//! # use dtekv_emulator_core::peripheral::*;
 //! # use std::fs::File;
 //! # use std::io::{BufReader, Read};
+//! # use dtekv_emulator_core::memory_mapped::*;
 //! #
-//! let mut bus = io::Bus::new();
+//! let mut bus = peripheral::Bus::new();
 //! // Use RC if you want to access io device after attaching
-//! let mut sdram = io::SDRam::new();
-//! bus.attach_device((io::SDRAM_LOWER_ADDR, io::SDRAM_HIGHER_ADDR), Box::new(sdram));
+//! let mut sdram = peripheral::SDRam::new();
+//! bus.attach_device(
+//!     (peripheral::SDRAM_LOWER_ADDR, peripheral::SDRAM_HIGHER_ADDR),
+//!     Box::new(sdram)
+//! );
 //!
 //! let mut cpu = cpu::Cpu::new_with_bus(bus);
 //!
@@ -32,8 +36,8 @@
 //!
 //! loop {
 //!     cpu.clock();
-//!     if let Some(interrupt) = cpu.bus.interrupt() {
-//!         cpu.interrupt(interrupt);
+//!     if let Some(interrupt) = cpu.bus.poll_interrupt() {
+//!         cpu.handle_interrupt(interrupt);
 //!     }
 //! }
 //!
@@ -43,8 +47,8 @@ pub mod cpu;
 pub mod csr;
 pub mod register;
 
-pub mod memory_mapped;
 pub mod interrupt;
+pub mod memory_mapped;
 
 pub mod instruction;
 
