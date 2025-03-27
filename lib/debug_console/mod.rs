@@ -49,6 +49,8 @@ pub enum Error {
     LoadOutOfBounds { addr: u32, instr_addr: u32 },
     /// When a store instruction is out of bounds
     StoreOutOfBounds { addr: u32, instr_addr: u32 },
+    /// Render to VGA while the channel is swapping
+    RenderWhileSwapping {},
 }
 
 pub struct DebugConsole {
@@ -103,6 +105,10 @@ impl DebugConsole {
 
     pub(crate) fn store_out_of_bounds(&mut self, addr: u32, instr_addr: u32) {
         self.push(Error::StoreOutOfBounds { addr, instr_addr }.into());
+    }
+
+    pub(crate) fn render_while_swapping(&mut self) {
+        self.push(Error::RenderWhileSwapping {}.into());
     }
 }
 

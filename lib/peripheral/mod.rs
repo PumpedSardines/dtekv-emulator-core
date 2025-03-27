@@ -27,4 +27,17 @@ pub use timer::*;
 mod uart;
 pub use uart::*;
 
-mod vga;
+pub mod vga;
+
+fn test() {
+    struct TestRenderer {}
+    impl vga::Renderer for TestRenderer {
+        fn set_pixel(&mut self, _0: u32, _1: (u8, u8, u8)) { }
+        fn set_buffer_offset(&mut self, _: u32) { }
+    }
+
+    let channel = vga::Channel::new(TestRenderer {});
+    let dma = vga::Dma::new(&channel);
+    let buffer = vga::Buffer::new(&channel);
+
+}

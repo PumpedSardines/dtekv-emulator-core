@@ -1,13 +1,15 @@
 use crate::{memory_mapped::MemoryMapped, peripheral::Peripheral, utils};
 
+use super::{buffer::VGA_BUFFER_LOWER_ADDR, channel::Channel, Renderer };
+
 pub const VGA_DMA_LOWER_ADDR: u32 = 0x4000100;
 pub const VGA_DMA_HIGHER_ADDR: u32 = 0x400010f;
 
-pub struct VgaDma {
-    buffer: u32,
+pub struct Dma<'a, T: Renderer> {
+    channel: &'a Channel<T>,
+    buffer_offset: u32,
     back_buffer: u32,
     enable: bool,
-    is_swapping: bool,
 }
 
 enum VgaDmaPart {
@@ -29,48 +31,44 @@ impl From<u32> for VgaDmaPart {
     }
 }
 
-impl Default for VgaDma {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl VgaDma {
+impl<'a, T: Renderer> Dma<'a, T> {
     /// Returns a new Memory object with a given size all set to 0
-    pub fn new() -> Self {
-        VgaDma {
-            buffer: 0x08000000,
-            back_buffer: 0x08000000,
+    pub fn new(channel: &'a Channel<T>) -> Self {
+        Dma {
+            channel,
+            buffer_offset: VGA_BUFFER_LOWER_ADDR,
+            back_buffer: VGA_BUFFER_LOWER_ADDR,
             enable: false,
-            is_swapping: false,
         }
     }
 
     pub fn get_buffer(&self) -> u32 {
-        self.buffer
+        self.buffer_offset
     }
 
     pub fn handle_swap(&mut self) {
         // Swap the buffers if needed
-        if self.is_swapping {
-            let temp = self.buffer;
-            self.buffer = self.back_buffer;
+        if self.channel.is_swapping() {
+            let temp = self.buffer_offset;
+
+            self.buffer_offset = self.back_buffer;
+            self.channel.set_buffer_offset(self.buffer_offset);
             self.back_buffer = temp;
         }
-        self.is_swapping = false;
+        self.channel.finish_swap();
     }
 }
 
-impl Peripheral<()> for VgaDma {}
+impl<'a, T: Renderer> Peripheral<()> for Dma<'a, T> {}
 
-impl MemoryMapped<()> for VgaDma {
+impl<'a, T: Renderer> MemoryMapped<()> for Dma<'a, T> {
     fn load_byte(&self, addr: u32) -> Result<u8, ()> {
         let addr = addr - VGA_DMA_LOWER_ADDR;
         let part: VgaDmaPart = addr.into();
         let index = addr & 0b11;
 
         match part {
-            VgaDmaPart::Buffer => Ok(utils::get_in_u32(self.buffer, addr)),
+            VgaDmaPart::Buffer => Ok(utils::get_in_u32(self.buffer_offset, addr)),
             VgaDmaPart::BackBuffer => Ok(utils::get_in_u32(self.back_buffer, addr)),
             VgaDmaPart::Resolution => {
                 const RESOLUTION: u32 = (240 << 16) | 320;
@@ -78,7 +76,7 @@ impl MemoryMapped<()> for VgaDma {
             }
             VgaDmaPart::StatusControl => {
                 let mut value = 0;
-                if self.is_swapping {
+                if self.channel.is_swapping() {
                     value |= 0b1;
                 }
                 value = value | (1 << 1); // The Addressing mode is always 1
@@ -104,7 +102,7 @@ impl MemoryMapped<()> for VgaDma {
 
         match part {
             VgaDmaPart::Buffer => {
-                self.is_swapping = true; // Schedule a swap
+                self.channel.start_swap();
             }
             VgaDmaPart::BackBuffer => {
                 self.back_buffer = utils::set_in_u32(self.back_buffer, byte, index);
@@ -123,7 +121,7 @@ impl MemoryMapped<()> for VgaDma {
     }
 }
 
-impl std::fmt::Debug for VgaDma {
+impl<'a, T: Renderer> std::fmt::Debug for Dma<'a, T> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "Vga {{ ... }}")
     }
