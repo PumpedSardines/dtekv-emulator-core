@@ -10,6 +10,7 @@
 - Timer
 - VGA output
 - Hex displays
+- LED
 - Button interrupts
 - Switch interrupts
 - Timer interrupts
