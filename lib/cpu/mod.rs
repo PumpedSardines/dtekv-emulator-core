@@ -9,7 +9,12 @@ use std::{cell::RefCell, rc::Rc};
 #[cfg(feature = "debug-console")]
 use crate::debug_console::DebugConsole;
 use crate::{
-    csr::{Csr, CsrBlock}, instruction::Instruction, interrupt::InterruptSignal, memory_mapped::MemoryMapped, peripheral::{Peripheral, SDRAM_SIZE}, register::RegisterBlock
+    csr::{Csr, CsrBlock},
+    instruction::Instruction,
+    interrupt::InterruptSignal,
+    memory_mapped::MemoryMapped,
+    peripheral::{Peripheral, SDRAM_SIZE},
+    register::RegisterBlock,
 };
 
 mod instructions;

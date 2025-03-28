@@ -4,10 +4,10 @@ pub const SDRAM_SIZE: usize = 0x4000000;
 pub const SDRAM_LOWER_ADDR: u32 = 0;
 pub const SDRAM_HIGHER_ADDR: u32 = SDRAM_LOWER_ADDR + SDRAM_SIZE as u32 - 1;
 
-#[cfg(target_endian = "little")]
-pub use le::*;
 #[cfg(target_endian = "big")]
 pub use be::*;
+#[cfg(target_endian = "little")]
+pub use le::*;
 
 mod le {
     use super::*;
@@ -72,9 +72,7 @@ mod le {
                 return Err(());
             }
             Ok(unsafe {
-                core::ptr::read(
-                    (self.mem.as_ptr() as *const u8).add(addr as usize) as *const u16
-                )
+                core::ptr::read((self.mem.as_ptr() as *const u8).add(addr as usize) as *const u16)
             })
         }
 
@@ -178,7 +176,6 @@ mod be {
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {

@@ -325,49 +325,64 @@ fn get_itype_imm(v: u32) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use crate::{csr::Csr, instruction::Instruction};
     use super::*;
-
-
+    use crate::{csr::Csr, instruction::Instruction};
 
     #[test]
     fn test_parse() {
         let cases = vec![
-            (0x00fff337, Instruction::LUI {
-                rd: Register::T1,
-                imm: UTypeImm::new(0xfff000).unwrap(),
-            }),
-            (0x0874f093, Instruction::ANDI {
-                rd: Register::RA,
-                rs1: Register::S1,
-                imm: ITypeImm::new(0x87).unwrap(),
-            }),
-            (0x089323a3, Instruction::SW {
-                rs1: Register::T1,
-                rs2: Register::S1,
-                imm: STypeImm::new(0x87).unwrap(),
-            }),
-            (0x7410076f, Instruction::JAL {
-                rd: Register::A4,
-                imm: JTypeImm::new(0xf40).unwrap(),
-            }),
-            (0x000f1263, Instruction::BNE {
-                rs1: Register::T5,
-                rs2: Register::ZERO,
-                imm: BTypeImm::new(0x4).unwrap(),
-            }),
-            (0x01901f13, Instruction::SLLI {
-                rs1: Register::ZERO,
-                rd: Register::T5,
-                imm: ShamtImm::new(25).unwrap(),
-            })
+            (
+                0x00fff337,
+                Instruction::LUI {
+                    rd: Register::T1,
+                    imm: UTypeImm::new(0xfff000).unwrap(),
+                },
+            ),
+            (
+                0x0874f093,
+                Instruction::ANDI {
+                    rd: Register::RA,
+                    rs1: Register::S1,
+                    imm: ITypeImm::new(0x87).unwrap(),
+                },
+            ),
+            (
+                0x089323a3,
+                Instruction::SW {
+                    rs1: Register::T1,
+                    rs2: Register::S1,
+                    imm: STypeImm::new(0x87).unwrap(),
+                },
+            ),
+            (
+                0x7410076f,
+                Instruction::JAL {
+                    rd: Register::A4,
+                    imm: JTypeImm::new(0xf40).unwrap(),
+                },
+            ),
+            (
+                0x000f1263,
+                Instruction::BNE {
+                    rs1: Register::T5,
+                    rs2: Register::ZERO,
+                    imm: BTypeImm::new(0x4).unwrap(),
+                },
+            ),
+            (
+                0x01901f13,
+                Instruction::SLLI {
+                    rs1: Register::ZERO,
+                    rd: Register::T5,
+                    imm: ShamtImm::new(25).unwrap(),
+                },
+            ),
         ];
 
         for (raw, instr) in cases {
             assert_eq!(Instruction::try_from(raw), Ok(instr));
         }
     }
-
 
     #[test]
     fn test_parse_csrrs() {

@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 
 use crate::{cpu, interrupt::InterruptSignal, memory_mapped::MemoryMapped};
 
-use super::{ Peripheral};
+use super::Peripheral;
 
 pub const TIMER_LOWER_ADDR: u32 = 0x4000020;
 pub const TIMER_HIGHER_ADDR: u32 = 0x400003f;

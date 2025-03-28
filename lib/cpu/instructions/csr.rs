@@ -1,4 +1,4 @@
-use crate::{cpu::Cpu, csr::Csr, peripheral::{self, Peripheral}, register::Register};
+use crate::{cpu::Cpu, csr::Csr, peripheral::Peripheral, register::Register};
 
 fn debug_console_csr_helper<T: Peripheral<()>>(cpu: &mut Cpu<T>, csr: Csr) {
     #[cfg(feature = "debug-console")]

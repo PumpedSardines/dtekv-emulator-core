@@ -1,6 +1,6 @@
 use crate::{memory_mapped::MemoryMapped, peripheral::Peripheral, utils};
 
-use super::{buffer::VGA_BUFFER_LOWER_ADDR, channel::Channel, Renderer };
+use super::{buffer::VGA_BUFFER_LOWER_ADDR, channel::Channel, Renderer};
 
 pub const VGA_DMA_LOWER_ADDR: u32 = 0x4000100;
 pub const VGA_DMA_HIGHER_ADDR: u32 = 0x400010f;
@@ -52,11 +52,11 @@ impl<'a, T: Renderer> Dma<'a, T> {
     /// instantly, however this meant that a lot of users had code that worked on the emulator but
     /// not on the real hardware since checking the swap bit is optional on the emulator but not on
     /// the hardware.
-    /// 
+    ///
     /// Therefore i've also implemented schedule functionality like this that will schedule a swap
     /// and execute the swap at a later time. Calling this function will handle a scheduled swap.
     /// Preferably call this function 60 times a second or something like that.
-    pub  fn handle_swap(&mut self) {
+    pub fn handle_swap(&mut self) {
         // Swap the buffers if needed
         if self.channel.is_swapping() {
             let temp = self.buffer_offset;

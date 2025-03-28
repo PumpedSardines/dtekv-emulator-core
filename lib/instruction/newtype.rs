@@ -118,7 +118,7 @@ create_imm_struct!(
     doc = "Immediate value for I-type instructions",
     ITypeImm,
     |instr: u32| { ((instr as i32) >> 20) as u32 },
-    |imm| { 
+    |imm| {
         helper_signed_ext_within_range(imm, 0xFFF)
     },
     doc = "Creates a new ITypeImm without checking if the given imm is valid\n\n# Safety\n\nThe value requires that that upper 20 bits are either 0 or 1"
@@ -128,7 +128,7 @@ create_imm_struct!(
     doc = "Immediate value for I-Type instructions using shamt field",
     ShamtImm,
     |instr: u32| { (instr >> 20) & 0x1F },
-    |imm| { 
+    |imm| {
         imm < 32
     },
     doc = "Creates a new ShamtImm without checking if the given imm is valid\n\n# Safety\n\nThe value requires to be between 0..=32"
@@ -145,7 +145,7 @@ create_imm_struct!(
 create_imm_struct!(
     doc = "Immediate value for B-type instructions",
     BTypeImm,
-    |instr: u32| {  
+    |instr: u32| {
         (((instr as i32) >> 31) << 12) as u32
         | (((instr >> 7) & 0x1) << 11)
         | (((instr >> 25) & 0x3F) << 5)

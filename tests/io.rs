@@ -12,7 +12,10 @@ fn test_hex_display() {
     let hex_display = Rc::new(RefCell::new(peripheral::HexDisplay::new()));
     let sdram = Rc::new(RefCell::new(peripheral::SDRam::new()));
     bus.attach_device(
-        (peripheral::HEX_DISPLAY_LOWER_ADDR, peripheral::HEX_DISPLAY_HIGHER_ADDR),
+        (
+            peripheral::HEX_DISPLAY_LOWER_ADDR,
+            peripheral::HEX_DISPLAY_HIGHER_ADDR,
+        ),
         Box::new(hex_display.clone()),
     );
     bus.attach_device(
@@ -49,7 +52,10 @@ fn test_switch_display() {
     let switch = Rc::new(RefCell::new(peripheral::Switch::new()));
     let sdram = Rc::new(RefCell::new(peripheral::SDRam::new()));
     bus.attach_device(
-        (peripheral::SWITCH_LOWER_ADDR, peripheral::SWITCH_HIGHER_ADDR),
+        (
+            peripheral::SWITCH_LOWER_ADDR,
+            peripheral::SWITCH_HIGHER_ADDR,
+        ),
         Box::new(switch.clone()),
     );
     bus.attach_device(

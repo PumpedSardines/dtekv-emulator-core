@@ -61,7 +61,7 @@ pub enum Instruction {
     LB {
         rd: Register,
         rs1: Register,
-        imm: ITypeImm
+        imm: ITypeImm,
     },
     LH {
         rd: Register,
@@ -71,7 +71,7 @@ pub enum Instruction {
     LW {
         rd: Register,
         rs1: Register,
-        imm: ITypeImm
+        imm: ITypeImm,
     },
     LBU {
         rd: Register,

@@ -1,8 +1,6 @@
 use std::fmt;
 
-use crate::{
-    interrupt::InterruptSignal, memory_mapped::MemoryMapped, peripheral::Peripheral
-};
+use crate::{interrupt::InterruptSignal, memory_mapped::MemoryMapped, peripheral::Peripheral};
 
 /// You should probably not use the default bus implementation. It is very general purpose and is
 /// quite slow. You should implement your own bus for your specific needs. This is mostly here for

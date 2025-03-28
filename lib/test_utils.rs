@@ -2,7 +2,11 @@
 
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{cpu::Cpu, memory_mapped::MemoryMapped, peripheral::{self, Peripheral}};
+use crate::{
+    cpu::Cpu,
+    memory_mapped::MemoryMapped,
+    peripheral::{self, Peripheral},
+};
 
 pub struct TestCpuData {
     pub cpu: Cpu<peripheral::Bus>,
@@ -37,22 +41,34 @@ pub fn new_io_cpu() -> TestCpuData {
     let button = add_bus!(
         bus,
         peripheral::Button::new(),
-        (peripheral::BUTTON_LOWER_ADDR, peripheral::BUTTON_HIGHER_ADDR)
+        (
+            peripheral::BUTTON_LOWER_ADDR,
+            peripheral::BUTTON_HIGHER_ADDR
+        )
     );
     let hex_display = add_bus!(
         bus,
         peripheral::HexDisplay::new(),
-        (peripheral::HEX_DISPLAY_LOWER_ADDR, peripheral::HEX_DISPLAY_HIGHER_ADDR)
+        (
+            peripheral::HEX_DISPLAY_LOWER_ADDR,
+            peripheral::HEX_DISPLAY_HIGHER_ADDR
+        )
     );
     let led_strip = add_bus!(
         bus,
         peripheral::LEDStrip::new(),
-        (peripheral::LED_STRIP_LOWER_ADDR, peripheral::LED_STRIP_HIGHER_ADDR)
+        (
+            peripheral::LED_STRIP_LOWER_ADDR,
+            peripheral::LED_STRIP_HIGHER_ADDR
+        )
     );
     let switch = add_bus!(
         bus,
         peripheral::Switch::new(),
-        (peripheral::SWITCH_LOWER_ADDR, peripheral::SWITCH_HIGHER_ADDR)
+        (
+            peripheral::SWITCH_LOWER_ADDR,
+            peripheral::SWITCH_HIGHER_ADDR
+        )
     );
     let uart = add_bus!(
         bus,

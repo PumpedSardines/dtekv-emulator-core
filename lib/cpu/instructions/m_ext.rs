@@ -1,4 +1,4 @@
-use crate::{cpu::Cpu, peripheral::{Peripheral}, register::Register};
+use crate::{cpu::Cpu, peripheral::Peripheral, register::Register};
 
 fn debug_console_division_by_zero<T: Peripheral<()>>(cpu: &mut Cpu<T>) {
     #[cfg(feature = "debug-console")]
