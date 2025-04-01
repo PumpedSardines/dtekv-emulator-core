@@ -1,6 +1,6 @@
 [package]
 name = "dtekv_emulator_core"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 
 [lib]
@@ -8,9 +8,19 @@ name = "dtekv_emulator_core"
 path = "lib/lib.rs"
 
 [features]
-default = ["debug"]
-debug = []
+default = ["debug-console"]
+debug-console = []
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+
+[dev-dependencies]
+test-case = "*"
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "sieves"
+harness = false
+
+[profile.release]
+debug = 1

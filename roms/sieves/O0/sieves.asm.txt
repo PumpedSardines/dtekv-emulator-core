@@ -1,0 +1,116 @@
+
+main-O0.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00000000 <_start>:
+   0:	00000013          	nop
+   4:	00100117          	auipc	sp,0x100
+   8:	0e810113          	add	sp,sp,232 # 1000ec <_stack_end>
+   c:	00001197          	auipc	gp,0x1
+  10:	8dc18193          	add	gp,gp,-1828 # 8e8 <__global_pointer>
+  14:	008000ef          	jal	1c <prime_sieves>
+
+00000018 <loop>:
+  18:	0000006f          	j	18 <loop>
+
+0000001c <prime_sieves>:
+  1c:	fe010113          	add	sp,sp,-32
+  20:	00812e23          	sw	s0,28(sp)
+  24:	02010413          	add	s0,sp,32
+  28:	00200793          	li	a5,2
+  2c:	fef42623          	sw	a5,-20(s0)
+  30:	0240006f          	j	54 <prime_sieves+0x38>
+  34:	0e802703          	lw	a4,232(zero) # e8 <sieves>
+  38:	fec42783          	lw	a5,-20(s0)
+  3c:	00f707b3          	add	a5,a4,a5
+  40:	00100713          	li	a4,1
+  44:	00e78023          	sb	a4,0(a5)
+  48:	fec42783          	lw	a5,-20(s0)
+  4c:	00178793          	add	a5,a5,1
+  50:	fef42623          	sw	a5,-20(s0)
+  54:	fec42703          	lw	a4,-20(s0)
+  58:	06300793          	li	a5,99
+  5c:	fce7dce3          	bge	a5,a4,34 <prime_sieves+0x18>
+  60:	00200793          	li	a5,2
+  64:	fef42623          	sw	a5,-20(s0)
+  68:	0600006f          	j	c8 <prime_sieves+0xac>
+  6c:	0e802703          	lw	a4,232(zero) # e8 <sieves>
+  70:	fec42783          	lw	a5,-20(s0)
+  74:	00f707b3          	add	a5,a4,a5
+  78:	0007c783          	lbu	a5,0(a5)
+  7c:	04078063          	beqz	a5,bc <prime_sieves+0xa0>
+  80:	fec42783          	lw	a5,-20(s0)
+  84:	00179793          	sll	a5,a5,0x1
+  88:	fef42423          	sw	a5,-24(s0)
+  8c:	0240006f          	j	b0 <prime_sieves+0x94>
+  90:	0e802703          	lw	a4,232(zero) # e8 <sieves>
+  94:	fe842783          	lw	a5,-24(s0)
+  98:	00f707b3          	add	a5,a4,a5
+  9c:	00078023          	sb	zero,0(a5)
+  a0:	fe842703          	lw	a4,-24(s0)
+  a4:	fec42783          	lw	a5,-20(s0)
+  a8:	00f707b3          	add	a5,a4,a5
+  ac:	fef42423          	sw	a5,-24(s0)
+  b0:	fe842703          	lw	a4,-24(s0)
+  b4:	06300793          	li	a5,99
+  b8:	fce7dce3          	bge	a5,a4,90 <prime_sieves+0x74>
+  bc:	fec42783          	lw	a5,-20(s0)
+  c0:	00178793          	add	a5,a5,1
+  c4:	fef42623          	sw	a5,-20(s0)
+  c8:	fec42703          	lw	a4,-20(s0)
+  cc:	06300793          	li	a5,99
+  d0:	f8e7dee3          	bge	a5,a4,6c <prime_sieves+0x50>
+  d4:	00000013          	nop
+  d8:	00000013          	nop
+  dc:	01c12403          	lw	s0,28(sp)
+  e0:	02010113          	add	sp,sp,32
+  e4:	00008067          	ret
+
+Disassembly of section .data:
+
+000000e8 <sieves>:
+  e8:	0000                	.insn	2, 0x
+  ea:	0001                	.insn	2, 0x0001
+
+Disassembly of section .comment:
+
+00000000 <.comment>:
+   0:	3a434347          	.insn	4, 0x3a434347
+   4:	2820                	.insn	2, 0x2820
+   6:	39386367          	.insn	4, 0x39386367
+   a:	6431                	.insn	2, 0x6431
+   c:	6438                	.insn	2, 0x6438
+   e:	20293263          	.insn	4, 0x20293263
+  12:	3331                	.insn	2, 0x3331
+  14:	322e                	.insn	2, 0x322e
+  16:	302e                	.insn	2, 0x302e
+	...
+
+Disassembly of section .riscv.attributes:
+
+00000000 <.riscv.attributes>:
+   0:	3241                	.insn	2, 0x3241
+   2:	0000                	.insn	2, 0x
+   4:	7200                	.insn	2, 0x7200
+   6:	7369                	.insn	2, 0x7369
+   8:	01007663          	bgeu	zero,a6,14 <_start+0x14>
+   c:	0028                	.insn	2, 0x0028
+   e:	0000                	.insn	2, 0x
+  10:	1004                	.insn	2, 0x1004
+  12:	7205                	.insn	2, 0x7205
+  14:	3376                	.insn	2, 0x3376
+  16:	6932                	.insn	2, 0x6932
+  18:	7032                	.insn	2, 0x7032
+  1a:	5f31                	.insn	2, 0x5f31
+  1c:	326d                	.insn	2, 0x326d
+  1e:	3070                	.insn	2, 0x3070
+  20:	7a5f 6369 7273      	.insn	6, 0x727363697a5f
+  26:	7032                	.insn	2, 0x7032
+  28:	5f30                	.insn	2, 0x5f30
+  2a:	6d7a                	.insn	2, 0x6d7a
+  2c:	756d                	.insn	2, 0x756d
+  2e:	316c                	.insn	2, 0x316c
+  30:	3070                	.insn	2, 0x3070
+	...
