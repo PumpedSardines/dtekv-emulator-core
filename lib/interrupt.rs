@@ -14,6 +14,10 @@ impl InterruptSignal {
     }
 
     unsafe fn new_unchecked(cause: u32, external: bool) -> Self {
+        if cause & 0x80000000 == 1 {
+            debug_assert!(cause & 0x80000000 == 0);
+            std::hint::unreachable_unchecked();
+        }
         Self(cause, external)
     }
 
