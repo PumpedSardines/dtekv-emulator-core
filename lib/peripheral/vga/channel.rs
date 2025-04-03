@@ -47,14 +47,14 @@ impl<T: Renderer> Channel<T> {
         }
     }
 
-    pub fn with_renderer_borrow(&self, f: impl FnOnce(&T)) {
+    pub fn with_renderer_borrow<K>(&self, f: impl FnOnce(&T) -> K) -> K {
         let data = get_mut!(self);
-        f(&data.renderer);
+        f(&data.renderer)
     }
 
-    pub fn with_renderer_borrow_mut(&self, f: impl FnOnce(&mut T)) {
+    pub fn with_renderer_borrow_mut<K>(&self, f: impl FnOnce(&mut T) -> K) -> K {
         let data = get_mut!(self);
-        f(&mut data.renderer);
+        f(&mut data.renderer)
     }
 
     // SAFETY: All of these functions only have a mutable borrow while this function is called.
