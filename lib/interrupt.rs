@@ -22,7 +22,11 @@ impl InterruptSignal {
     }
 
     pub fn cause(&self) -> u32 {
-        self.0
+        if self.external() {
+            return self.0 | 0x80000000;
+        } else {
+            self.0 
+        }
     }
 
     pub fn external(&self) -> bool {
