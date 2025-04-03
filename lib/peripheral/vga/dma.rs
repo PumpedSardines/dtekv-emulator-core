@@ -1,6 +1,10 @@
 use crate::{memory_mapped::MemoryMapped, peripheral::Peripheral, utils};
 
-use super::{buffer::VGA_BUFFER_LOWER_ADDR, channel::Channel, Renderer};
+use super::{
+    buffer::{VGA_BUFFER_HIGHER_ADDR, VGA_BUFFER_LOWER_ADDR},
+    channel::Channel,
+    Renderer,
+};
 
 pub const VGA_DMA_LOWER_ADDR: u32 = 0x4000100;
 pub const VGA_DMA_HIGHER_ADDR: u32 = 0x400010f;
@@ -62,7 +66,11 @@ impl<'a, T: Renderer> Dma<'a, T> {
             let temp = self.buffer_offset;
 
             self.buffer_offset = self.back_buffer;
-            self.channel.set_buffer_offset(self.buffer_offset);
+            self.channel.set_buffer_offset(u32::clamp(
+                self.buffer_offset - VGA_BUFFER_LOWER_ADDR,
+                0,
+                VGA_BUFFER_HIGHER_ADDR - VGA_BUFFER_LOWER_ADDR,
+            ));
             self.back_buffer = temp;
         }
         self.channel.finish_swap();
